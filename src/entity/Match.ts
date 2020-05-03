@@ -38,7 +38,7 @@ export class Match {
         itemTwoOldElo: number;
         itemOneNewElo: number;
         itemTwoNewElo: number;
-        winner: number
+        winner: number;
     }) {
         if (params) {
             this.itemOne = params.itemOne;
