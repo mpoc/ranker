@@ -1,4 +1,6 @@
 import { Request, Response } from "express";
+import { getConnection } from "typeorm";
+import { Item } from "./entity/Item";
 
 interface HelloResponse {
   hello: string;
@@ -18,4 +20,19 @@ export const helloHandler = (req: Request, res: Response) => {
   const response = helloBuilder(name);
 
   return res.json(response);
+};
+
+interface AddRequest {
+  items: {title: string, url: string}[];
+}
+
+export const addHandler = async (req: Request, res: Response) => {
+  try {
+    const body: AddRequest = req.body;
+    await getConnection().getRepository(Item).insert(body.items);
+    return res.json({ body });
+  } catch (err) {
+    console.error(err);
+    res.json({ error: err.message || err });
+  }
 };
