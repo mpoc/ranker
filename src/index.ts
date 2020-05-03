@@ -33,8 +33,7 @@ app.listen(port, async (err: Error) => {
       synchronize: true
     });
     console.log("Successfully connected to database");
-  }
-  catch (e) {
+  } catch (e) {
     console.log(e);
   }
 });

@@ -1,18 +1,28 @@
-import {Entity, PrimaryGeneratedColumn, Column} from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne} from "typeorm";
+import { Game } from "./Game";
 
 @Entity()
 export class Item {
 
     @PrimaryGeneratedColumn()
-    id!: number;
+    id: number;
 
     @Column()
-    title!: string;
+    title: string;
 
     @Column()
-    url!: string;
+    url: string;
 
     @Column({ default: 400 })
-    elo!: number;
+    elo: number;
 
+    @ManyToOne(type => Game, game => game.items)
+    game: Game;
+
+    constructor(params?: { title: string, url: string }) {
+        if (params) {
+            this.title = params.title;
+            this.url = params.url;
+        }
+    }
 }

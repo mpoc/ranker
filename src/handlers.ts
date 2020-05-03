@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { getConnection } from "typeorm";
 import { Item } from "./entity/Item";
+import { Game } from "./entity/Game";
 
 interface HelloResponse {
   hello: string;
@@ -23,14 +24,21 @@ export const helloHandler = (req: Request, res: Response) => {
 };
 
 interface AddRequest {
+  title: string;
   items: {title: string, url: string}[];
 }
 
 export const addHandler = async (req: Request, res: Response) => {
   try {
     const body: AddRequest = req.body;
-    await getConnection().getRepository(Item).insert(body.items);
-    return res.json({ body });
+
+    const items = body.items.map(item => new Item(item));
+    const game = new Game({
+      "title": body.title,
+      items
+    });
+    
+    res.json(await getConnection().manager.save(game));
   } catch (err) {
     console.error(err);
     res.json({ error: err.message || err });
