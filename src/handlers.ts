@@ -23,19 +23,18 @@ export const helloHandler = (req: Request, res: Response) => {
   return res.json(response);
 };
 
-interface AddRequest {
+interface AddGameRequest {
   title: string;
-  items: {title: string, url: string}[];
+  items: { title: string; url: string }[];
 }
 
-export const addHandler = async (req: Request, res: Response) => {
+export const addGameHandler = async (req: Request, res: Response) => {
   try {
-    const body: AddRequest = req.body;
+    const addGameReq: AddGameRequest = req.body;
 
-    const items = body.items.map(item => new Item(item));
     const game = new Game({
-      "title": body.title,
-      items
+      "title": addGameReq.title,
+      "items": addGameReq.items.map(item => new Item(item))
     });
     
     res.json(await getConnection().manager.save(game));

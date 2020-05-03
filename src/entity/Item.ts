@@ -19,7 +19,7 @@ export class Item {
     @ManyToOne(type => Game, game => game.items)
     game: Game;
 
-    constructor(params?: { title: string, url: string }) {
+    constructor(params?: { title: string; url: string }) {
         if (params) {
             this.title = params.title;
             this.url = params.url;

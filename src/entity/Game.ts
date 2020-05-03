@@ -15,7 +15,7 @@ export class Game {
     })
     items: Item[];
 
-    constructor(params?: { title: string, items: Item[] }) {
+    constructor(params?: { title: string; items: Item[] }) {
         if (params) {
             this.title = params.title;
             this.items = params.items;
