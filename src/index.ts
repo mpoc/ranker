@@ -3,8 +3,6 @@ import express from "express";
 import "reflect-metadata";
 import { createConnection } from "typeorm";
 import {
-  rootHandler,
-  helloHandler,
   addGameHandler,
   playMatchHandler,
   getGameHandler,
@@ -19,9 +17,6 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 const port = process.env.SERVER_PORT || "8000";
-
-app.get("/", rootHandler);
-app.get("/hello/:name", helloHandler);
 
 // Add a game with items
 app.post("/api/game/add", addGameHandler);
