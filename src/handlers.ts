@@ -43,3 +43,40 @@ export const addGameHandler = async (req: Request, res: Response) => {
     res.json({ error: err.message || err });
   }
 };
+
+interface MatchPlayRequest {
+  firstPlayerId: number;
+  secondPlayerId: number;
+  winner: 1 | 2;
+}
+
+export const playMatchHandler = async (req: Request, res: Response) => {
+  try {
+    const matchPlayReq: MatchPlayRequest = req.body;
+
+    const firstPlayer = await getConnection().getRepository(Item).findOne(matchPlayReq.firstPlayerId, { relations: ["game"] });
+    const secondPlayer = await getConnection().getRepository(Item).findOne(matchPlayReq.secondPlayerId, { relations: ["game"] });
+    
+    if (!firstPlayer || !secondPlayer) res.json({ error: "item not found" });
+    if (firstPlayer.game.id != secondPlayer.game.id) res.json({ error: "items not from the same game" });
+
+    const firstPlayerProbability = (1.0 / (1.0 + Math.pow(10, ((secondPlayer.elo - firstPlayer.elo) / 400))));
+    const secondPlayerProbability = (1.0 / (1.0 + Math.pow(10, ((firstPlayer.elo - secondPlayer.elo) / 400))));
+
+    const kValue = 30;
+
+    const firstPlayerScore = matchPlayReq.winner == 1 ? 1 : 0;
+    const secondPlayerScore = matchPlayReq.winner == 1 ? 0 : 1;
+    
+    const firstPlayerNewElo = firstPlayer.elo + kValue * (firstPlayerScore - firstPlayerProbability);
+    const secondPlayerNewElo = secondPlayer.elo + kValue * (secondPlayerScore - secondPlayerProbability);
+    
+    firstPlayer.elo = firstPlayerNewElo;
+    secondPlayer.elo = secondPlayerNewElo;
+
+    res.json(await getConnection().manager.save([firstPlayer, secondPlayer]));
+  } catch (err) {
+    console.error(err);
+    res.json({ error: err.message || err });
+  }
+};

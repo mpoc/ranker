@@ -13,7 +13,7 @@ export class Item {
     @Column()
     url: string;
 
-    @Column({ default: 400 })
+    @Column({ type: "float", default: 400 })
     elo: number;
 
     @ManyToOne(type => Game, game => game.items)
