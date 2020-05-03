@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { getConnection } from "typeorm";
 import { Item } from "./entity/Item";
 import { Game } from "./entity/Game";
+import { Match } from "./entity/Match";
 
 interface HelloResponse {
   hello: string;
@@ -71,10 +72,22 @@ export const playMatchHandler = async (req: Request, res: Response) => {
     const firstPlayerNewElo = firstPlayer.elo + kValue * (firstPlayerScore - firstPlayerProbability);
     const secondPlayerNewElo = secondPlayer.elo + kValue * (secondPlayerScore - secondPlayerProbability);
     
+    const match = new Match({
+      "itemOne": firstPlayer,
+      "itemTwo": secondPlayer,
+      "itemOneOldElo": firstPlayer.elo,
+      "itemTwoOldElo": secondPlayer.elo,
+      "itemOneNewElo": firstPlayerNewElo,
+      "itemTwoNewElo": secondPlayerNewElo,
+      "winner": matchPlayReq.winner
+    });
+    
     firstPlayer.elo = firstPlayerNewElo;
+    firstPlayer.matchCount++;
     secondPlayer.elo = secondPlayerNewElo;
-
-    res.json(await getConnection().manager.save([firstPlayer, secondPlayer]));
+    secondPlayer.matchCount++;
+    
+    res.json(await getConnection().manager.save([firstPlayer, secondPlayer, match]));
   } catch (err) {
     console.error(err);
     res.json({ error: err.message || err });

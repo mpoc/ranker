@@ -13,6 +13,9 @@ export class Item {
     @Column()
     url: string;
 
+    @Column({ default: 0 })
+    matchCount: number;
+
     @Column({ type: "float", default: 400 })
     elo: number;
 
