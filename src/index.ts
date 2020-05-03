@@ -2,7 +2,14 @@ import dotenv from "dotenv";
 import express from "express";
 import "reflect-metadata";
 import { createConnection } from "typeorm";
-import { rootHandler, helloHandler, addGameHandler, playMatchHandler, getGameHandler } from "./handlers";
+import {
+  rootHandler,
+  helloHandler,
+  addGameHandler,
+  playMatchHandler,
+  getGameHandler,
+  itemsForNewMatchHandler
+} from "./handlers";
 import path from "path";
 
 dotenv.config();
@@ -21,6 +28,9 @@ app.post("/api/game/add", addGameHandler);
 
 // Get items for a game sorted by elo
 app.get("/api/game/:gameId", getGameHandler);
+
+// Get two items in a game with the lowest amount of matches for a new match
+app.get("/api/game/:gameId/items-for-new-match", itemsForNewMatchHandler);
 
 // Add a match
 app.post("/api/match/play", playMatchHandler);

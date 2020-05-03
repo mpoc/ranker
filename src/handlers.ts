@@ -98,7 +98,7 @@ export const getGameHandler = async (req: Request, res: Response) => {
   try {
     const gameId = req.params.gameId;
 
-    const games = await getConnection().getRepository(Item).find({
+    const items = await getConnection().getRepository(Item).find({
       relations: ["game"],
       where: {
         game: {
@@ -110,7 +110,31 @@ export const getGameHandler = async (req: Request, res: Response) => {
       }
     });
 
-    res.json(games);
+    res.json(items);
+  } catch (err) {
+    console.error(err);
+    res.json({ error: err.message || err });
+  }
+};
+
+export const itemsForNewMatchHandler = async (req: Request, res: Response) => {
+  try {
+    const gameId = req.params.gameId;
+
+    const items = await getConnection().getRepository(Item).find({
+      relations: ["game"],
+      where: {
+        game: {
+          id: gameId
+        }
+      },
+      order: {
+        matchCount: "ASC"
+      },
+      take: 2
+    });
+
+    res.json(items);
   } catch (err) {
     console.error(err);
     res.json({ error: err.message || err });
