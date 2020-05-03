@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import express from "express";
 import "reflect-metadata";
 import { createConnection } from "typeorm";
-import { rootHandler, helloHandler, addGameHandler, playMatchHandler } from "./handlers";
+import { rootHandler, helloHandler, addGameHandler, playMatchHandler, getGameHandler } from "./handlers";
 import path from "path";
 
 dotenv.config();
@@ -15,7 +15,14 @@ const port = process.env.SERVER_PORT || "8000";
 
 app.get("/", rootHandler);
 app.get("/hello/:name", helloHandler);
+
+// Add a game with items
 app.post("/api/game/add", addGameHandler);
+
+// Get items for a game sorted by elo
+app.get("/api/game/:gameId", getGameHandler);
+
+// Add a match
 app.post("/api/match/play", playMatchHandler);
 
 app.listen(port, async (err: Error) => {

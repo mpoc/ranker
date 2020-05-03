@@ -93,3 +93,26 @@ export const playMatchHandler = async (req: Request, res: Response) => {
     res.json({ error: err.message || err });
   }
 };
+
+export const getGameHandler = async (req: Request, res: Response) => {
+  try {
+    const gameId = req.params.gameId;
+
+    const games = await getConnection().getRepository(Item).find({
+      relations: ["game"],
+      where: {
+        game: {
+          id: gameId
+        }
+      },
+      order: {
+        elo: "DESC"
+      }
+    });
+
+    res.json(games);
+  } catch (err) {
+    console.error(err);
+    res.json({ error: err.message || err });
+  }
+};
