@@ -15,7 +15,6 @@
         "@types/express": "^4.17.6",
         "@types/mongoose": "^5.7.22",
         "@types/node": "^13.13.4",
-        "@types/pg": "^7.14.3",
         "@typescript-eslint/eslint-plugin": "^2.30.0",
         "@typescript-eslint/parser": "^2.30.0",
         "eslint": "^6.8.0",
@@ -25,11 +24,8 @@
         "typescript": "^3.8.3"
     },
     "dependencies": {
-        "dotenv": "^8.2.0",
+        "@hapi/joi": "^17.1.1",
         "express": "^4.17.1",
-        "mongoose": "^5.9.18",
-        "pg": "^8.0.3",
-        "reflect-metadata": "^0.1.13",
-        "typeorm": "^0.2.24"
+        "mongoose": "^5.9.18"
     }
 }

@@ -1,4 +1,6 @@
 import * as mongoose from "mongoose";
+import Joi from "@hapi/joi";
+
 
 const Schema = mongoose.Schema;
 
@@ -18,4 +20,14 @@ export const ItemSchema = new Schema({
 export const GameSchema = new Schema({
     title: String,
     items: [Schema.Types.ObjectId]
+});
+
+export const addGameValidator = Joi.object({
+    title: Joi.string().required(),
+    items: Joi.array().items(
+        Joi.object({
+            title: Joi.string().required(),
+            url: Joi.string().required()
+        }
+    )).required()
 });

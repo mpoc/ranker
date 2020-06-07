@@ -1,35 +1,40 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { ItemSchema, GameSchema } from "./models";
+import { addGameValidator, ItemSchema, GameSchema } from "./models";
 // import { getConnection } from "typeorm";
 // import { Item } from "./entity/Item";
 // import { Game } from "./entity/Game";
 // import { Match } from "./entity/Match";
 
 export const addGame = async (req: Request, res: Response) => {
-    const { items, ...gameWithoutItems } = req.body;
-
-    const Item = mongoose.model("Item", ItemSchema);
-    const Game = mongoose.model("Game", GameSchema);
-
-    Item.insertMany(items, (error, insertedItems) => {
-        if (error) {
-            res.send(error);
-        } else {
-            const newGame = new Game({
-                ...gameWithoutItems,
-                items: insertedItems
-            });
-
-            newGame.save((error, insertedGame) => {
-                if (error) {
-                    res.send(error);
-                } else {
-                    res.json({ insertedGame, insertedItems });
-                }
-            });
-        }
-    });
+    const { value, error } = addGameValidator.validate(req.body);
+    if (error) {
+        res.send(error.details[0].message);
+    } else {
+        const { items, ...gameWithoutItems } = value;
+    
+        const Item = mongoose.model("Item", ItemSchema);
+        const Game = mongoose.model("Game", GameSchema);
+    
+        Item.insertMany(items, (error, insertedItems) => {
+            if (error) {
+                res.send(error);
+            } else {
+                const newGame = new Game({
+                    ...gameWithoutItems,
+                    items: insertedItems
+                });
+    
+                newGame.save((error, insertedGame) => {
+                    if (error) {
+                        res.send(error);
+                    } else {
+                        res.json({ insertedGame, insertedItems });
+                    }
+                });
+            }
+        });
+    }
 }
 
 // interface AddGameRequest {
