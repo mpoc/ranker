@@ -1,52 +1,38 @@
-import dotenv from "dotenv";
 import express from "express";
-import "reflect-metadata";
-import { createConnection } from "typeorm";
+import mongoose from "mongoose";
 import {
-  addGameHandler,
-  playMatchHandler,
-  getGameHandler,
-  itemsForNewMatchHandler
-} from "./handlers";
-import path from "path";
-
-dotenv.config();
+    addGame,
+    getGame,
+    playMatch,
+    getNewMatch
+} from "./controller";
+import { handleError, ErrorHandler } from "./error";
 
 const app = express();
+
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-const port = process.env.SERVER_PORT || "8000";
+const port = "8000";
 
 // Add a game with items
-app.post("/api/game/add", addGameHandler);
+app.post("/api/games", addGame);
 
 // Get items for a game sorted by elo
-app.get("/api/game/:gameId", getGameHandler);
+app.get("/api/games", getGame);
 
 // Get two items in a game with the lowest amount of matches for a new match
-app.get("/api/game/:gameId/items-for-new-match", itemsForNewMatchHandler);
+app.get("/api/matches/new", getNewMatch);
 
 // Add a match
-app.post("/api/match/play", playMatchHandler);
+app.post("/api/matches", playMatch);
+
+app.use((err, req, res, next) => {
+    handleError(err, res);
+});
 
 app.listen(port, async (err: Error) => {
-  if (err) return console.error(err);
-  console.log(`Server is listening on ${port}`);
-  
-  try {
-    await createConnection({
-      type: "postgres",
-      host: process.env.PGHOST,
-      port: Number(process.env.PGPORT),
-      username: process.env.PGUSER,
-      password: process.env.PGPASSWORD,
-      database: process.env.PGDATABASE,
-      entities: [path.join(__dirname, "/entity/*.{ts,js}")],
-      synchronize: true
-    });
-    console.log("Successfully connected to database");
-  } catch (e) {
-    console.log(e);
-  }
+    if (err) return console.error(err);
+    mongoose.connect("mongodb://192.168.99.100:27017/ranker", { useNewUrlParser: true, useUnifiedTopology: true });
+    console.log(`Server is listening on ${port}`);
 });
