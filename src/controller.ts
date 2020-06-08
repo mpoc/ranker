@@ -3,11 +3,14 @@ import mongoose from "mongoose";
 import promisify from "util";
 import {
   addGameRequestSchema,
+  addGameRequest,
   getGameRequestSchema,
+  getGameRequest,
   playMatchRequestSchema,
-  ItemDbSchema,
-  GameDbSchema,
+  playMatchRequest,
 } from "./models";
+import Game, { IGame } from "./models/game.model";
+import Item, { IItem } from "./models/item.model";
 import { ErrorHandler } from "./error";
 import {
     OK,
@@ -19,14 +22,11 @@ import {
 
 export const addGame = async (req, res, next) => {
     try {
-        const { error, value } = addGameRequestSchema.validate(req.body);
+        const { error, value }: {error, value: addGameRequest} = addGameRequestSchema.validate(req.body);
     
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
     
         const { items, ...gameWithoutItems } = value;
-    
-        const Item = mongoose.model("Item", ItemDbSchema);
-        const Game = mongoose.model("Game", GameDbSchema);
     
         const insertedItems = await Item.insertMany(items).catch(error => {
             throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
@@ -49,11 +49,9 @@ export const addGame = async (req, res, next) => {
 
 export const getGame = async (req, res, next) => {
     try {
-        const { error, value } = getGameRequestSchema.validate(req.query);
+        const { error, value }: { error, value: getGameRequest } = getGameRequestSchema.validate(req.query);
     
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
-    
-        const Game = mongoose.model("Game", GameDbSchema);
     
         const foundGame = await Game.findById(value.id).catch(error => {
             throw new ErrorHandler(BAD_REQUEST, String(error.reason))
@@ -68,27 +66,58 @@ export const getGame = async (req, res, next) => {
 }
 
 export const playMatch = async (req, res, next) => {
-    const { error, value } = playMatchRequestSchema.validate(req.body);
-    if (error) return next(new ErrorHandler(BAD_REQUEST, error));
-
-    const Item = mongoose.model("Item", ItemDbSchema);
-
     try {
-        const items = await Item.find({
-            '_id': {
-                $in: value.items.map((itemId: string) => mongoose.Types.ObjectId(itemId))
-            }
-        });
-        
-        const returnedItemIds = items.map(item => String(item._id));
-        const itemArraydifference = value.items.filter(item => !returnedItemIds.includes(item));
-        if (itemArraydifference.length > 0) return next(new ErrorHandler(BAD_REQUEST, "Invalid item ids: " + itemArraydifference.join(", ")));
-    } catch (error) {
-        return next(new ErrorHandler(BAD_REQUEST, String(error.reason)));
-    }
-    next(new ErrorHandler(OK, "good."));
-}
+        const { error, value }: { error, value: playMatchRequest } = playMatchRequestSchema.validate(req.body);
 
+        if (error) throw new ErrorHandler(BAD_REQUEST, error);
+
+        const items = await Item.find()
+            .where("_id")
+            .in(value.itemIds)
+            .exec()
+            .catch((error) => {
+                throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
+            });
+
+        const returnedItemIds = items.map(item => String(item._id));
+        const itemArraydifference = value.itemIds.filter(item => !returnedItemIds.includes(item));
+
+        if (itemArraydifference.length > 0) throw new ErrorHandler(BAD_REQUEST, "Invalid item ids: " + itemArraydifference.join(", "));
+
+        // TODO check if items are from the same game
+        // This might require changing the schema so that items would hold a
+        // single instance of a game instead of games holding instances of items
+
+        // Disallow more than 2 items for now
+        if (items.length > 2) throw new ErrorHandler(BAD_REQUEST, "Cannot play a match with more than 2 items");
+
+        const players: IItem[] = items.map(item => item.toObject());
+        const winningProbabilities = [
+            (1.0 / (1.0 + Math.pow(10, ((players[1].elo - players[0].elo) / 400)))),
+            (1.0 / (1.0 + Math.pow(10, ((players[0].elo - players[1].elo) / 400))))
+        ];
+        const kValue = 30;
+        const scores = players.map((player, index) => index == value.winnerIndex ? 1 : 0);
+        const newElo = players.map((player, index) => players[index].elo + kValue * (scores[index] - winningProbabilities[index]));
+
+        newElo.map((elo, index) => {
+            items[index].elo = elo;
+            items[index].matchCount++;
+        });
+
+        // This is not very good. Figure out a way to bulk save.
+        const itemsToSave = items.map(async (item) => 
+            await item.save().catch(error => {
+                throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
+            })
+        );
+        const savedItems = await Promise.all(itemsToSave);
+        
+        res.status(OK).json({ savedItems });
+    } catch (error) {
+        next(error);
+    }
+}
 
 // export const playMatchHandler = async (req: Request, res: Response) => {
 //   try {

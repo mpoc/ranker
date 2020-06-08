@@ -1,26 +1,4 @@
-import mongoose from "mongoose";
 import Joi from "@hapi/joi";
-
-const Schema = mongoose.Schema;
-
-export const ItemDbSchema = new Schema(
-{
-    title: String,
-    url: String,
-    matchCount: {
-        type: Number,
-        default: 0
-    },
-    elo: {
-        type: Number,
-        default: 1000.0
-    }
-}, { versionKey: false });
-
-export const GameDbSchema = new Schema({
-    title: String,
-    items: [Schema.Types.ObjectId]
-}, { versionKey: false });
 
 export const addGameRequestSchema = Joi.object({
     title: Joi.string().required(),
@@ -32,13 +10,30 @@ export const addGameRequestSchema = Joi.object({
     )).required()
 });
 
+export type addGameRequest = {
+    title: string,
+    items: {
+        title: string,
+        url: string
+    }
+}
+
 export const getGameRequestSchema = Joi.object({
     id: Joi.string().required()
 })
 
+export type getGameRequest = {
+    id: string
+};
+
 export const playMatchRequestSchema = Joi.object({
-    items: Joi.array().items(
+    itemIds: Joi.array().items(
         Joi.string().required()
     ).min(2).unique().required(),
-    winnerIndex: Joi.number().integer().min(0).max(Joi.ref('items', { adjust: (value) => value.length - 1 })).required()
+    winnerIndex: Joi.number().integer().min(0).max(Joi.ref('itemIds', { adjust: (value) => value.length - 1 })).required()
 })
+
+export type playMatchRequest = {
+    itemIds: string[],
+    winnerIndex: number
+}
