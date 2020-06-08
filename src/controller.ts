@@ -7,57 +7,57 @@ import {
     GameDbSchema
 } from "./models";
 import { ErrorHandler } from "./error";
-import { CREATED, BAD_REQUEST, INTERNAL_SERVER_ERROR } from "http-status-codes";
+import {
+    OK,
+    CREATED,
+    BAD_REQUEST,
+    INTERNAL_SERVER_ERROR,
+    NOT_FOUND
+} from "http-status-codes";
 // import { getConnection } from "typeorm";
 // import { Item } from "./entity/Item";
 // import { Game } from "./entity/Game";
 // import { Match } from "./entity/Match";
 
 export const addGame = async (req, res, next) => {
-    try {
-        const { value, error } = addGameRequestSchema.validate(req.body);
+    const { error, value } = addGameRequestSchema.validate(req.body);
 
-        if (error) throw new ErrorHandler(BAD_REQUEST, String(error));
+    if (error) return next(new ErrorHandler(BAD_REQUEST, error.message));
 
-        const { items, ...gameWithoutItems } = value;
-    
-        const Item = mongoose.model("Item", ItemDbSchema);
-        const Game = mongoose.model("Game", GameDbSchema);
-    
-        Item.insertMany(items, (error, insertedItems) => {
-            if (error) throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
+    const { items, ...gameWithoutItems } = value;
 
-            const newGame = new Game({
-                ...gameWithoutItems,
-                items: insertedItems
-            });
+    const Item = mongoose.model("Item", ItemDbSchema);
+    const Game = mongoose.model("Game", GameDbSchema);
 
-            newGame.save((error, insertedGame) => {
-                if (error) throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
-                
-                res.status(CREATED).json({ insertedGame, insertedItems });
-            });
+    Item.insertMany(items, (error, insertedItems) => {
+        if (error) return next(new ErrorHandler(INTERNAL_SERVER_ERROR, error.message));
+
+        const newGame = new Game({
+            ...gameWithoutItems,
+            items: insertedItems
         });
-        next();
-    } catch (error) {
-        next(error);
-    }
+
+        newGame.save((error, insertedGame) => {
+            if (error) return next(new ErrorHandler(INTERNAL_SERVER_ERROR, error.message));
+            
+            res.status(CREATED).json({ insertedGame, insertedItems });
+        });
+    });
 }
 
-export const getGame = async (req: Request, res: Response) => {
-    const { value, error } = getGameRequestSchema.validate(req.query);
-    if (error) {
-        res.send(error);
-    } else {
-        const Game = mongoose.model("Game", GameDbSchema);
-        Game.findById(value.id, (error, foundGame) => {
-            if (error) {
-                res.send(error);
-            } else {
-                res.json(foundGame);
-            }
-        });
-    }
+export const getGame = async (req, res, next) => {
+    const { error, value } = getGameRequestSchema.validate(req.query);
+
+    if (error) return next(new ErrorHandler(BAD_REQUEST, error.message));
+
+    const Game = mongoose.model("Game", GameDbSchema);
+
+    Game.findById(value.id, (error, foundGame) => {
+        if (error) return next(new ErrorHandler(BAD_REQUEST, String(error.reason)));
+        if (!foundGame) return next(new ErrorHandler(NOT_FOUND, "Game not found"));
+
+        res.status(OK).json({ foundGame });
+    });
 }
 
 // interface AddGameRequest {
@@ -84,7 +84,7 @@ export const getGame = async (req: Request, res: Response) => {
 // interface MatchPlayRequest {
 //   firstPlayerId: number;
 //   secondPlayerId: number;
-//   winner: 1 | 2;
+//   winner: 1 |` 2;
 // }
 
 // export const playMatchHandler = async (req: Request, res: Response) => {
