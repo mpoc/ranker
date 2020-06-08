@@ -1,6 +1,4 @@
-import { Request, Response } from "express";
 import mongoose from "mongoose";
-import promisify from "util";
 import {
   addGameRequestSchema,
   addGameRequest,
@@ -8,6 +6,8 @@ import {
   getGameRequest,
   playMatchRequestSchema,
   playMatchRequest,
+  getNewMatchRequestSchema,
+  getNewMatchRequest
 } from "./models";
 import Game, { IGame } from "./models/game.model";
 import Item, { IItem } from "./models/item.model";
@@ -23,7 +23,6 @@ import {
 export const addGame = async (req, res, next) => {
     try {
         const { error, value }: {error, value: addGameRequest} = addGameRequestSchema.validate(req.body);
-    
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
     
         const { items, ...gameWithoutItems } = value;
@@ -50,11 +49,10 @@ export const addGame = async (req, res, next) => {
 export const getGame = async (req, res, next) => {
     try {
         const { error, value }: { error, value: getGameRequest } = getGameRequestSchema.validate(req.query);
-    
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
     
         const foundGame = await Game.findById(value.id).catch(error => {
-            throw new ErrorHandler(BAD_REQUEST, String(error.reason))
+            throw new ErrorHandler(BAD_REQUEST, error.reason)
         });
             
         if (!foundGame) return next(new ErrorHandler(NOT_FOUND, "Game not found"));
@@ -68,7 +66,6 @@ export const getGame = async (req, res, next) => {
 export const playMatch = async (req, res, next) => {
     try {
         const { error, value }: { error, value: playMatchRequest } = playMatchRequestSchema.validate(req.body);
-
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
 
         const items = await Item.find()
@@ -100,6 +97,8 @@ export const playMatch = async (req, res, next) => {
         const scores = players.map((player, index) => index == value.winnerIndex ? 1 : 0);
         const newElo = players.map((player, index) => players[index].elo + kValue * (scores[index] - winningProbabilities[index]));
 
+        // Possibly create a match entry here to track progress
+
         newElo.map((elo, index) => {
             items[index].elo = elo;
             items[index].matchCount++;
@@ -119,92 +118,32 @@ export const playMatch = async (req, res, next) => {
     }
 }
 
-// export const playMatchHandler = async (req: Request, res: Response) => {
-//   try {
-//     const matchPlayReq: MatchPlayRequest = req.body;
+export const getNewMatch = async (req, res, next) => {
+    try {
+        const { error, value }: { error, value: getNewMatchRequest } = getNewMatchRequestSchema.validate(req.query);
+        if (error) throw new ErrorHandler(BAD_REQUEST, error);
 
-//     const firstPlayer = await getConnection().getRepository(Item).findOne(matchPlayReq.firstPlayerId, { relations: ["game"] });
-//     const secondPlayer = await getConnection().getRepository(Item).findOne(matchPlayReq.secondPlayerId, { relations: ["game"] });
-    
-//     if (!firstPlayer || !secondPlayer) res.json({ error: "item not found" });
-//     if (firstPlayer.game.id != secondPlayer.game.id) res.json({ error: "items not from the same game" });
+        const gameExists = await Game.exists({ _id: value.gameId }).catch(error => {
+            throw new ErrorHandler(BAD_REQUEST, error.reason)
+        });
 
-//     const firstPlayerProbability = (1.0 / (1.0 + Math.pow(10, ((secondPlayer.elo - firstPlayer.elo) / 400))));
-//     const secondPlayerProbability = (1.0 / (1.0 + Math.pow(10, ((firstPlayer.elo - secondPlayer.elo) / 400))));
+        if (!gameExists) throw new ErrorHandler(NOT_FOUND, "Game not found");
 
-//     const kValue = 30;
+        // Get a game, get it's items, sort them in ascending order by
+        // matchCount and get the first two
+        const itemsForGame = await Game.aggregate([
+            { '$match': { '_id': mongoose.Types.ObjectId(value.gameId) } },
+            { '$project': { '_id': false, 'items': true } },
+            { '$lookup': { 'from': 'items', 'localField': 'items', 'foreignField': '_id', 'as': 'items' } },
+            { '$unwind': { 'path': '$items' } },
+            { '$replaceRoot': { 'newRoot': { '$mergeObjects': [ '$$ROOT', '$items' ] } } },
+            { '$project': { 'items': false } },
+            { '$sort': { 'matchCount': 1 } },
+            { '$limit': 2 }
+        ]).exec().catch(error => { throw new ErrorHandler(INTERNAL_SERVER_ERROR, error) });
 
-//     const firstPlayerScore = matchPlayReq.winner == 1 ? 1 : 0;
-//     const secondPlayerScore = matchPlayReq.winner == 1 ? 0 : 1;
-    
-//     const firstPlayerNewElo = firstPlayer.elo + kValue * (firstPlayerScore - firstPlayerProbability);
-//     const secondPlayerNewElo = secondPlayer.elo + kValue * (secondPlayerScore - secondPlayerProbability);
-    
-//     const match = new Match({
-//       "itemOne": firstPlayer,
-//       "itemTwo": secondPlayer,
-//       "itemOneOldElo": firstPlayer.elo,
-//       "itemTwoOldElo": secondPlayer.elo,
-//       "itemOneNewElo": firstPlayerNewElo,
-//       "itemTwoNewElo": secondPlayerNewElo,
-//       "winner": matchPlayReq.winner
-//     });
-    
-//     firstPlayer.elo = firstPlayerNewElo;
-//     firstPlayer.matchCount++;
-//     secondPlayer.elo = secondPlayerNewElo;
-//     secondPlayer.matchCount++;
-    
-//     res.json(await getConnection().manager.save([firstPlayer, secondPlayer, match]));
-//   } catch (err) {
-//     console.error(err);
-//     res.json({ error: err.message || err });
-//   }
-// };
-
-// export const getGameHandler = async (req: Request, res: Response) => {
-//   try {
-//     const gameId = req.params.gameId;
-
-//     const items = await getConnection().getRepository(Item).find({
-//       relations: ["game"],
-//       where: {
-//         game: {
-//           id: gameId
-//         }
-//       },
-//       order: {
-//         elo: "DESC"
-//       }
-//     });
-
-//     res.json(items);
-//   } catch (err) {
-//     console.error(err);
-//     res.json({ error: err.message || err });
-//   }
-// };
-
-// export const itemsForNewMatchHandler = async (req: Request, res: Response) => {
-//   try {
-//     const gameId = req.params.gameId;
-
-//     const items = await getConnection().getRepository(Item).find({
-//       relations: ["game"],
-//       where: {
-//         game: {
-//           id: gameId
-//         }
-//       },
-//       order: {
-//         matchCount: "ASC"
-//       },
-//       take: 2
-//     });
-
-//     res.json(items);
-//   } catch (err) {
-//     console.error(err);
-//     res.json({ error: err.message || err });
-//   }
-// };
+        res.status(OK).json({ itemsForGame });
+    } catch (error) {
+        next(error);
+    }
+}

@@ -7,7 +7,7 @@ export const addGameRequestSchema = Joi.object({
             title: Joi.string().required(),
             url: Joi.string().required()
         }
-    )).required()
+    )).min(2).required()
 });
 
 export type addGameRequest = {
@@ -36,4 +36,12 @@ export const playMatchRequestSchema = Joi.object({
 export type playMatchRequest = {
     itemIds: string[],
     winnerIndex: number
+}
+
+export const getNewMatchRequestSchema = Joi.object({
+    gameId: Joi.string().required()
+})
+
+export type getNewMatchRequest = {
+    gameId: string
 }

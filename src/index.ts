@@ -1,27 +1,18 @@
-// import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
-// import "reflect-metadata";
-// import { createConnection } from "typeorm";
 import {
     addGame,
     getGame,
-    playMatch
-//   getGameHandler,
-//   itemsForNewMatchHandler
+    playMatch,
+    getNewMatch
 } from "./controller";
 import { handleError, ErrorHandler } from "./error";
-
-// import path from "path";
-
-// dotenv.config();
 
 const app = express();
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
-// const port = process.env.SERVER_PORT || "8000";
 const port = "8000";
 
 // Add a game with items
@@ -31,7 +22,7 @@ app.post("/api/games", addGame);
 app.get("/api/games", getGame);
 
 // Get two items in a game with the lowest amount of matches for a new match
-// app.get("/api/game/:gameId/items-for-new-match", itemsForNewMatch);
+app.get("/api/matches/new", getNewMatch);
 
 // Add a match
 app.post("/api/matches", playMatch);
