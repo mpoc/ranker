@@ -1,10 +1,12 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
+import promisify from "util";
 import {
-    addGameRequestSchema,
-    getGameRequestSchema,
-    ItemDbSchema,
-    GameDbSchema
+  addGameRequestSchema,
+  getGameRequestSchema,
+  playMatchRequestSchema,
+  ItemDbSchema,
+  GameDbSchema,
 } from "./models";
 import { ErrorHandler } from "./error";
 import {
@@ -14,15 +16,11 @@ import {
     INTERNAL_SERVER_ERROR,
     NOT_FOUND
 } from "http-status-codes";
-// import { getConnection } from "typeorm";
-// import { Item } from "./entity/Item";
-// import { Game } from "./entity/Game";
-// import { Match } from "./entity/Match";
 
 export const addGame = async (req, res, next) => {
     const { error, value } = addGameRequestSchema.validate(req.body);
 
-    if (error) return next(new ErrorHandler(BAD_REQUEST, error.message));
+    if (error) return next(new ErrorHandler(BAD_REQUEST, error));
 
     const { items, ...gameWithoutItems } = value;
 
@@ -30,7 +28,7 @@ export const addGame = async (req, res, next) => {
     const Game = mongoose.model("Game", GameDbSchema);
 
     Item.insertMany(items, (error, insertedItems) => {
-        if (error) return next(new ErrorHandler(INTERNAL_SERVER_ERROR, error.message));
+        if (error) return next(new ErrorHandler(INTERNAL_SERVER_ERROR, error));
 
         const newGame = new Game({
             ...gameWithoutItems,
@@ -38,7 +36,7 @@ export const addGame = async (req, res, next) => {
         });
 
         newGame.save((error, insertedGame) => {
-            if (error) return next(new ErrorHandler(INTERNAL_SERVER_ERROR, error.message));
+            if (error) return next(new ErrorHandler(INTERNAL_SERVER_ERROR, error));
             
             res.status(CREATED).json({ insertedGame, insertedItems });
         });
@@ -48,7 +46,7 @@ export const addGame = async (req, res, next) => {
 export const getGame = async (req, res, next) => {
     const { error, value } = getGameRequestSchema.validate(req.query);
 
-    if (error) return next(new ErrorHandler(BAD_REQUEST, error.message));
+    if (error) return next(new ErrorHandler(BAD_REQUEST, error));
 
     const Game = mongoose.model("Game", GameDbSchema);
 
@@ -60,32 +58,28 @@ export const getGame = async (req, res, next) => {
     });
 }
 
-// interface AddGameRequest {
-//   title: string;
-//   items: { title: string; url: string }[];
-// }
+export const playMatch = async (req, res, next) => {
+    const { error, value } = playMatchRequestSchema.validate(req.body);
+    if (error) return next(new ErrorHandler(BAD_REQUEST, error));
 
-// export const addGameHandler = async (req: Request, res: Response) => {
-//   try {
-//     const addGameReq: AddGameRequest = req.body;
+    const Item = mongoose.model("Item", ItemDbSchema);
 
-//     const game = new Game({
-//       "title": addGameReq.title,
-//       "items": addGameReq.items.map(item => new Item(item))
-//     });
-    
-//     res.json(await getConnection().manager.save(game));
-//   } catch (err) {
-//     console.error(err);
-//     res.json({ error: err.message || err });
-//   }
-// };
+    try {
+        const items = await Item.find({
+            '_id': {
+                $in: value.items.map((itemId: string) => mongoose.Types.ObjectId(itemId))
+            }
+        });
+        
+        const returnedItemIds = items.map(item => String(item._id));
+        const itemArraydifference = value.items.filter(item => !returnedItemIds.includes(item));
+        if (itemArraydifference.length > 0) return next(new ErrorHandler(BAD_REQUEST, "Invalid item ids: " + itemArraydifference.join(", ")));
+    } catch (error) {
+        return next(new ErrorHandler(BAD_REQUEST, String(error.reason)));
+    }
+    next(new ErrorHandler(OK, "good."));
+}
 
-// interface MatchPlayRequest {
-//   firstPlayerId: number;
-//   secondPlayerId: number;
-//   winner: 1 |` 2;
-// }
 
 // export const playMatchHandler = async (req: Request, res: Response) => {
 //   try {

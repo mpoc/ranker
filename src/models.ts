@@ -35,3 +35,10 @@ export const addGameRequestSchema = Joi.object({
 export const getGameRequestSchema = Joi.object({
     id: Joi.string().required()
 })
+
+export const playMatchRequestSchema = Joi.object({
+    items: Joi.array().items(
+        Joi.string().required()
+    ).min(2).unique().required(),
+    winnerIndex: Joi.number().integer().min(0).max(Joi.ref('items', { adjust: (value) => value.length - 1 })).required()
+})

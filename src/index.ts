@@ -5,8 +5,8 @@ import mongoose from "mongoose";
 // import { createConnection } from "typeorm";
 import {
     addGame,
-    getGame
-//   playMatchHandler,
+    getGame,
+    playMatch
 //   getGameHandler,
 //   itemsForNewMatchHandler
 } from "./controller";
@@ -34,7 +34,7 @@ app.get("/api/games", getGame);
 // app.get("/api/game/:gameId/items-for-new-match", itemsForNewMatch);
 
 // Add a match
-// app.post("/api/match/play", playMatch);
+app.post("/api/matches", playMatch);
 
 app.use((err, req, res, next) => {
     handleError(err, res);
