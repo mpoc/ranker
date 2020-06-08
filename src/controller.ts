@@ -1,37 +1,60 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { addGameValidator, ItemSchema, GameSchema } from "./models";
+import {
+    addGameRequestSchema,
+    getGameRequestSchema,
+    ItemDbSchema,
+    GameDbSchema
+} from "./models";
+import { ErrorHandler } from "./error";
+import { CREATED, BAD_REQUEST, INTERNAL_SERVER_ERROR } from "http-status-codes";
 // import { getConnection } from "typeorm";
 // import { Item } from "./entity/Item";
 // import { Game } from "./entity/Game";
 // import { Match } from "./entity/Match";
 
-export const addGame = async (req: Request, res: Response) => {
-    const { value, error } = addGameValidator.validate(req.body);
-    if (error) {
-        res.send(error.details[0].message);
-    } else {
+export const addGame = async (req, res, next) => {
+    try {
+        const { value, error } = addGameRequestSchema.validate(req.body);
+
+        if (error) throw new ErrorHandler(BAD_REQUEST, String(error));
+
         const { items, ...gameWithoutItems } = value;
     
-        const Item = mongoose.model("Item", ItemSchema);
-        const Game = mongoose.model("Game", GameSchema);
+        const Item = mongoose.model("Item", ItemDbSchema);
+        const Game = mongoose.model("Game", GameDbSchema);
     
         Item.insertMany(items, (error, insertedItems) => {
+            if (error) throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
+
+            const newGame = new Game({
+                ...gameWithoutItems,
+                items: insertedItems
+            });
+
+            newGame.save((error, insertedGame) => {
+                if (error) throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
+                
+                res.status(CREATED).json({ insertedGame, insertedItems });
+            });
+        });
+        next();
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const getGame = async (req: Request, res: Response) => {
+    const { value, error } = getGameRequestSchema.validate(req.query);
+    if (error) {
+        res.send(error);
+    } else {
+        const Game = mongoose.model("Game", GameDbSchema);
+        Game.findById(value.id, (error, foundGame) => {
             if (error) {
                 res.send(error);
             } else {
-                const newGame = new Game({
-                    ...gameWithoutItems,
-                    items: insertedItems
-                });
-    
-                newGame.save((error, insertedGame) => {
-                    if (error) {
-                        res.send(error);
-                    } else {
-                        res.json({ insertedGame, insertedItems });
-                    }
-                });
+                res.json(foundGame);
             }
         });
     }

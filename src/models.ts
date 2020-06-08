@@ -1,10 +1,10 @@
-import * as mongoose from "mongoose";
+import mongoose from "mongoose";
 import Joi from "@hapi/joi";
-
 
 const Schema = mongoose.Schema;
 
-export const ItemSchema = new Schema({
+export const ItemDbSchema = new Schema(
+{
     title: String,
     url: String,
     matchCount: {
@@ -15,14 +15,14 @@ export const ItemSchema = new Schema({
         type: Number,
         default: 1000.0
     }
-});
+}, { versionKey: false });
 
-export const GameSchema = new Schema({
+export const GameDbSchema = new Schema({
     title: String,
     items: [Schema.Types.ObjectId]
-});
+}, { versionKey: false });
 
-export const addGameValidator = Joi.object({
+export const addGameRequestSchema = Joi.object({
     title: Joi.string().required(),
     items: Joi.array().items(
         Joi.object({
@@ -31,3 +31,7 @@ export const addGameValidator = Joi.object({
         }
     )).required()
 });
+
+export const getGameRequestSchema = Joi.object({
+    id: Joi.string().required()
+})
