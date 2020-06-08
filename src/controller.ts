@@ -18,44 +18,53 @@ import {
 } from "http-status-codes";
 
 export const addGame = async (req, res, next) => {
-    const { error, value } = addGameRequestSchema.validate(req.body);
-
-    if (error) return next(new ErrorHandler(BAD_REQUEST, error));
-
-    const { items, ...gameWithoutItems } = value;
-
-    const Item = mongoose.model("Item", ItemDbSchema);
-    const Game = mongoose.model("Game", GameDbSchema);
-
-    Item.insertMany(items, (error, insertedItems) => {
-        if (error) return next(new ErrorHandler(INTERNAL_SERVER_ERROR, error));
-
+    try {
+        const { error, value } = addGameRequestSchema.validate(req.body);
+    
+        if (error) throw new ErrorHandler(BAD_REQUEST, error);
+    
+        const { items, ...gameWithoutItems } = value;
+    
+        const Item = mongoose.model("Item", ItemDbSchema);
+        const Game = mongoose.model("Game", GameDbSchema);
+    
+        const insertedItems = await Item.insertMany(items).catch(error => {
+            throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
+        });
+    
         const newGame = new Game({
             ...gameWithoutItems,
             items: insertedItems
         });
-
-        newGame.save((error, insertedGame) => {
-            if (error) return next(new ErrorHandler(INTERNAL_SERVER_ERROR, error));
-            
-            res.status(CREATED).json({ insertedGame, insertedItems });
+    
+        const insertedGame = await newGame.save().catch(error => {
+            throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
         });
-    });
+    
+        res.status(CREATED).json({ insertedGame, insertedItems });
+    } catch (error) {
+        next(error);
+    }
 }
 
 export const getGame = async (req, res, next) => {
-    const { error, value } = getGameRequestSchema.validate(req.query);
-
-    if (error) return next(new ErrorHandler(BAD_REQUEST, error));
-
-    const Game = mongoose.model("Game", GameDbSchema);
-
-    Game.findById(value.id, (error, foundGame) => {
-        if (error) return next(new ErrorHandler(BAD_REQUEST, String(error.reason)));
+    try {
+        const { error, value } = getGameRequestSchema.validate(req.query);
+    
+        if (error) throw new ErrorHandler(BAD_REQUEST, error);
+    
+        const Game = mongoose.model("Game", GameDbSchema);
+    
+        const foundGame = await Game.findById(value.id).catch(error => {
+            throw new ErrorHandler(BAD_REQUEST, String(error.reason))
+        });
+            
         if (!foundGame) return next(new ErrorHandler(NOT_FOUND, "Game not found"));
-
+    
         res.status(OK).json({ foundGame });
-    });
+    } catch (error) {
+        next(error);
+    }
 }
 
 export const playMatch = async (req, res, next) => {
