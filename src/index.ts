@@ -4,7 +4,9 @@ import {
     addGame,
     getGame,
     playMatch,
-    getNewMatch
+    getNewMatch,
+    vote,
+    viewRatings
 } from "./controller";
 import { handleError, ErrorHandler } from "./error";
 
@@ -12,8 +14,16 @@ const app = express();
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+app.set("view engine", "pug");
+app.set("views", __dirname + "/views");
 
 const port = "8000";
+
+// Vote
+app.get("/vote/:gameId", vote);
+
+// View ratings
+app.get("/ratings/:gameId", viewRatings);
 
 // Add a game with items
 app.post("/api/games", addGame);

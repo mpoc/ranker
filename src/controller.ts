@@ -51,11 +51,23 @@ export const getGame = async (req, res, next) => {
         const { error, value }: { error, value: getGameRequest } = getGameRequestSchema.validate(req.query);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
     
-        const foundGame = await Game.findById(value.id).catch(error => {
+        const gameExists = await Game.exists({ _id: value.id }).catch(error => {
             throw new ErrorHandler(BAD_REQUEST, error.reason)
         });
-            
-        if (!foundGame) return next(new ErrorHandler(NOT_FOUND, "Game not found"));
+
+        if (!gameExists) throw new ErrorHandler(NOT_FOUND, "Game not found");
+
+        // Get a game by id with its items sorted by elo
+        const foundGame = await Game.aggregate([
+            { '$match': { '_id': mongoose.Types.ObjectId(value.id) } },
+            { '$lookup': { 'from': 'items', 'localField': 'items', 'foreignField': '_id', 'as': 'items' } },
+            { '$unwind': { 'path': '$items' } },
+            { '$sort': { 'items.elo': -1 } },
+            { '$group': { '_id': '$_id', 'items': { '$push': '$items' }, 'title': { '$first': '$title' } } }
+        ]).exec().catch(error => { throw new ErrorHandler(INTERNAL_SERVER_ERROR, error) });
+
+        // Maybe not necessary?
+        if (!foundGame || !foundGame.length) return next(new ErrorHandler(NOT_FOUND, "Game not found"));
     
         res.status(OK).json({ foundGame });
     } catch (error) {
@@ -68,13 +80,25 @@ export const playMatch = async (req, res, next) => {
         const { error, value }: { error, value: playMatchRequest } = playMatchRequestSchema.validate(req.body);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
 
-        const items = await Item.find()
-            .where("_id")
-            .in(value.itemIds)
+        // const items = await Item.find()
+        //     .where("_id")
+        //     .in(value.itemIds)
+        //     .exec()
+        //     .catch((error) => {
+        //         throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
+        //     });
+
+        const item1 = await Item.findById(value.itemIds[0])
             .exec()
             .catch((error) => {
                 throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
             });
+        const item2 = await Item.findById(value.itemIds[1])
+            .exec()
+            .catch((error) => {
+                throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
+            });
+        const items = [item1, item2];
 
         const returnedItemIds = items.map(item => String(item._id));
         const itemArraydifference = value.itemIds.filter(item => !returnedItemIds.includes(item));
@@ -131,19 +155,60 @@ export const getNewMatch = async (req, res, next) => {
 
         // Get a game, get it's items, sort them in ascending order by
         // matchCount and get the first two
-        const itemsForGame = await Game.aggregate([
-            { '$match': { '_id': mongoose.Types.ObjectId(value.gameId) } },
-            { '$project': { '_id': false, 'items': true } },
-            { '$lookup': { 'from': 'items', 'localField': 'items', 'foreignField': '_id', 'as': 'items' } },
-            { '$unwind': { 'path': '$items' } },
-            { '$replaceRoot': { 'newRoot': { '$mergeObjects': [ '$$ROOT', '$items' ] } } },
-            { '$project': { 'items': false } },
-            { '$sort': { 'matchCount': 1 } },
-            { '$limit': 2 }
-        ]).exec().catch(error => { throw new ErrorHandler(INTERNAL_SERVER_ERROR, error) });
+        // const itemsForGame = await Game.aggregate([
+        //     { '$match': { '_id': mongoose.Types.ObjectId(value.gameId) } },
+        //     { '$project': { '_id': false, 'items': true } },
+        //     { '$lookup': { 'from': 'items', 'localField': 'items', 'foreignField': '_id', 'as': 'items' } },
+        //     { '$unwind': { 'path': '$items' } },
+        //     { '$replaceRoot': { 'newRoot': { '$mergeObjects': [ '$$ROOT', '$items' ] } } },
+        //     { '$project': { 'items': false } },
+        //     { '$sort': { 'matchCount': 1 } },
+        //     { '$limit': 2 }
+        // ]).exec().catch(error => { throw new ErrorHandler(INTERNAL_SERVER_ERROR, error) });
+
+        // const itemsForGame = await Game.aggregate([
+        //     { '$match': { '_id': mongoose.Types.ObjectId(value.gameId) } },
+        //     { '$project': { '_id': false, 'items': true } },
+        //     { '$lookup': { 'from': 'items', 'localField': 'items', 'foreignField': '_id', 'as': 'items' } },
+        //     { '$unwind': { 'path': '$items' } },
+        //     { '$replaceRoot': { 'newRoot': { '$mergeObjects': [ '$$ROOT', '$items' ] } } },
+        //     { '$project': { 'items': false } },
+        //     { '$sample': { 'size': 2 } }
+        // ]).exec().catch(error => { throw new ErrorHandler(INTERNAL_SERVER_ERROR, error) });
+
+        const game = await Game.findById(value.gameId).exec().catch(error => {
+            throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
+        });
+
+        const count = game.items.length;
+        const numbers = [...Array(count).keys()];
+        const shuffledNumbers = numbers.reduce( 
+            (newArr, _, i) => {
+                var rand = i + ( Math.floor( Math.random() * (newArr.length - i) ) );
+                [newArr[rand], newArr[i]] = [newArr[i], newArr[rand]]
+                return newArr
+            }, [...numbers]
+        )
+
+        const item1 = await Item.findById(game.items[shuffledNumbers[0]]).exec().catch(error => {
+            throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
+        });
+        const item2 = await Item.findById(game.items[shuffledNumbers[1]]).exec().catch(error => {
+            throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
+        });
+
+        const itemsForGame = [item1, item2];
 
         res.status(OK).json({ itemsForGame });
     } catch (error) {
         next(error);
     }
 }
+
+export const vote = async (req, res, next) => {
+    res.render("vote.pug");
+}
+
+export const viewRatings = async (req, res, next) => {
+  res.render("ratings.pug");
+};

@@ -1,0 +1,120 @@
+html(lang='en')
+    head
+        title Vote
+        meta(charset="utf-8")
+        meta(name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no")
+        link(
+            rel="stylesheet"
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+            integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk"
+            crossorigin="anonymous"
+        )
+        style(type='text/css').
+            img.choice {
+                max-width: 650px;
+                max-height: 650px;
+            }
+            img.choice:hover {
+                cursor: pointer;
+            }
+        script.
+            let itemIdArray;
+
+            const makeImagesClickable = () => {
+                Array.prototype.forEach.call(
+                    document.getElementsByClassName("choice"),
+                    img => img.addEventListener("click", () => vote(img.getAttribute("index")))
+                );
+            }
+
+            const vote = (winnerIndex) => {
+                console.log("function called")
+                const json = {
+                    "itemIds": itemIdArray,
+                    "winnerIndex": winnerIndex
+                };
+
+                const options = {
+                    method: 'POST',
+                    body: JSON.stringify(json),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+
+                console.log({json, options});
+                fetch('/api/matches', options)
+                    .then(res => res.json())
+                    .then(res => console.log(res))
+                    .catch(err => console.error(err));
+
+                location.reload();
+            }
+
+            const fetchImagesForMatch = () => {
+                const path = window.location.pathname.split('/'); 
+                const gameId = path[path.length - 1];
+
+                const options = {
+                    method: 'GET',
+                    redirect: 'follow'
+                };
+
+                fetch('/api/matches/new?gameId=' + gameId, options)
+                    .then(res => res.json())
+                    .then(res => setImages(res))
+                    .catch(err => console.error(err));
+            }
+
+            const setImages = ({ itemsForGame }) => {
+                itemIdArray = itemsForGame.map(item => item._id);
+
+                const firstChoice = document.getElementById('firstChoice');
+                const secondChoice = document.getElementById('secondChoice');
+
+                firstChoice.setAttribute('index', 0);
+                secondChoice.setAttribute('index', 1);
+
+                firstChoice.setAttribute('src', itemsForGame[0].url);
+                secondChoice.setAttribute('src', itemsForGame[1].url);
+
+                const firstTitle = document.getElementById('firstTitle');
+                const secondTitle = document.getElementById('secondTitle');
+
+                firstTitle.innerHTML = itemsForGame[0].title;
+                secondTitle.innerHTML = itemsForGame[1].title;
+            }
+
+            document.addEventListener('keydown', (e) => {
+                if (e.code == "ArrowLeft") {
+                    vote(0);
+                } else if (e.code == "ArrowRight") {
+                    vote(1);
+                }
+            });
+
+            function logKey(e) {
+            log.textContent += ` ${e.code}`;
+            }
+
+            window.onload = () => {
+                makeImagesClickable();
+                fetchImagesForMatch();
+            }
+    body
+        div.row.justify-content-center.container-fluid
+            div.col-auto
+                table.table.table-responsive.table-borderless
+                    thead.thead-dark
+                        tr
+                            th Vote 1
+                            th Vote 2
+                    tbody
+                        tr
+                            td
+                                img.choice#firstChoice
+                            td
+                                img.choice#secondChoice
+                        tr
+                            td#firstTitle
+                            td#secondTitle

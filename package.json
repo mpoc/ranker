@@ -27,6 +27,7 @@
         "@hapi/joi": "^17.1.1",
         "express": "^4.17.1",
         "http-status-codes": "^1.4.0",
-        "mongoose": "^5.9.18"
+        "mongoose": "^5.9.18",
+        "pug": "^3.0.0"
     }
 }
