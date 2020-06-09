@@ -9,11 +9,13 @@ import {
     viewRatings
 } from "./controller";
 import { handleError, ErrorHandler } from "./error";
+import { logger, httpLogger } from "./utils";
 
 const app = express();
 
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+app.use(httpLogger);
 app.set("view engine", "pug");
 app.set("views", __dirname + "/views");
 
@@ -42,7 +44,8 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(port, async (err: Error) => {
-    if (err) return console.error(err);
+    if (err) return logger.error(err);
     mongoose.connect("mongodb://192.168.99.100:27017/ranker", { useNewUrlParser: true, useUnifiedTopology: true });
-    console.log(`Server is listening on ${port}`);
+    logger.info(`Server is listening on port ${port}`);
+    logger.info("Connected to MongoDB");
 });

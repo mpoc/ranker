@@ -1,24 +1,25 @@
 import mongoose from "mongoose";
 import {
-  addGameRequestSchema,
-  addGameRequest,
-  getGameRequestSchema,
-  getGameRequest,
-  playMatchRequestSchema,
-  playMatchRequest,
-  getNewMatchRequestSchema,
-  getNewMatchRequest
-} from "./models";
-import Game, { IGame } from "./models/game.model";
-import Item, { IItem } from "./models/item.model";
-import { ErrorHandler } from "./error";
-import {
     OK,
     CREATED,
     BAD_REQUEST,
     INTERNAL_SERVER_ERROR,
     NOT_FOUND
 } from "http-status-codes";
+import {
+    addGameRequestSchema,
+    addGameRequest,
+    getGameRequestSchema,
+    getGameRequest,
+    playMatchRequestSchema,
+    playMatchRequest,
+    getNewMatchRequestSchema,
+    getNewMatchRequest
+} from "./models";
+import Game, { IGame } from "./models/game.model";
+import Item, { IItem } from "./models/item.model";
+import { ErrorHandler } from "./error";
+import { logger } from "./utils";
 
 export const addGame = async (req, res, next) => {
     try {
