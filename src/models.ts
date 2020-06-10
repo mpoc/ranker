@@ -1,4 +1,5 @@
 import Joi from "@hapi/joi";
+import { IRating } from "./models/item.model";
 
 export const addGameRequestSchema = Joi.object({
     title: Joi.string().required(),
@@ -10,19 +11,20 @@ export const addGameRequestSchema = Joi.object({
     )).min(2).required()
 });
 
-export type addGameRequest = {
+export type AddGameRequest = {
     title: string,
     items: {
         title: string,
-        url: string
-    }
+        url: string,
+        rating?: IRating
+    }[]
 }
 
 export const getGameRequestSchema = Joi.object({
     id: Joi.string().required()
 })
 
-export type getGameRequest = {
+export type GetGameRequest = {
     id: string
 };
 
@@ -33,7 +35,7 @@ export const playMatchRequestSchema = Joi.object({
     winnerIndex: Joi.number().integer().min(0).max(Joi.ref('itemIds', { adjust: (value) => value.length - 1 })).required()
 })
 
-export type playMatchRequest = {
+export type PlayMatchRequest = {
     itemIds: string[],
     winnerIndex: number
 }
@@ -42,6 +44,6 @@ export const getNewMatchRequestSchema = Joi.object({
     gameId: Joi.string().required()
 })
 
-export type getNewMatchRequest = {
+export type GetNewMatchRequest = {
     gameId: string
 }

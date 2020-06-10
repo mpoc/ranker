@@ -1,48 +1,43 @@
 import mongoose from "mongoose";
 
-export interface IItem extends mongoose.Document {
-    title: string,
-    url: string,
-    matchCount: number,
-    rating: IRating
-};
+export enum RatingType {
+    Elo = "Elo",
+    Glicko2 = "Glicko2"
+}
 
 export interface IRating extends mongoose.Document {
+    ratingType: RatingType
     rating: number;
 }
 
+const RatingSchema = new mongoose.Schema({
+    rating: {
+        type: Number,
+        required: true
+    }
+}, { versionKey: false, discriminatorKey: 'ratingType' });
+
 export interface IEloRating extends IRating {}
 
-export interface IGlicko2Rating extends IRating {
-    defaultRating: number;
-    ratingDeviation: number;
-    tau: number;
-    volatility: number;
-}
-
-export enum RatingType {
-    Elo,
-    Glicko2
-}
-
 const EloRatingSchema = new mongoose.Schema({
-    elo: {
+    rating: {
         type: Number,
         default: 1000.0,
         required: true
     }
 }, { versionKey: false });
 
+export interface IGlicko2Rating extends IRating {
+    ratingDeviation: number;
+    tau: number;
+    volatility: number;
+}
+
 const Glicko2RatingSchema = new mongoose.Schema({
-    defaultRating: {
-        type: Number,
-        default: 1500.0,
-        required: true
-    },
     rating: {
         type: Number,
         default: 1500.0,
-        required: true        
+        required: true
     },
     ratingDeviation: {
         type: Number,
@@ -61,20 +56,14 @@ const Glicko2RatingSchema = new mongoose.Schema({
     }
 }, { versionKey: false });
 
-export const getRatingSchema = (ratingType: RatingType) => {
-    switch (ratingType) {
-        case RatingType.Elo: {
-            return EloRatingSchema;
-            break;
-        }
-        case RatingType.Elo: {
-            return Glicko2RatingSchema;
-            break;
-        }
-    }
-}
+export interface IItem extends mongoose.Document {
+    title: string,
+    url: string,
+    matchCount: number,
+    rating: IRating
+};
 
-export const createItemSchema = (ratingSchema: mongoose.Schema) => new mongoose.Schema({
+export const ItemSchema = new mongoose.Schema({
     title: {
         type: String,
         required: true
@@ -89,11 +78,15 @@ export const createItemSchema = (ratingSchema: mongoose.Schema) => new mongoose.
         required: true
     },
     rating: {
-        type: ratingSchema,
-        default: () => ({}),
+        type: RatingSchema,
         required: true
     }
-}, { versionKey: false, strict: false });
+}, { versionKey: false });
 
-export const getItemModel = (ratingType: RatingType) =>
-    mongoose.model<IItem>("Item", createItemSchema(getRatingSchema(ratingType)));
+// https://github.com/DefinitelyTyped/DefinitelyTyped/issues/30714
+export const EloRating = (ItemSchema.path("rating") as mongoose.Schema.Types.DocumentArray)
+    .discriminator<IEloRating>("Elo", EloRatingSchema);
+export const Glicko2Rating = (ItemSchema.path("rating") as mongoose.Schema.Types.DocumentArray)
+    .discriminator<IGlicko2Rating>("Glicko2", Glicko2RatingSchema);
+
+export const Item = mongoose.model<IItem>("Item", ItemSchema);

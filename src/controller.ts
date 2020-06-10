@@ -8,53 +8,38 @@ import {
 } from "http-status-codes";
 import {
     addGameRequestSchema,
-    addGameRequest,
+    AddGameRequest,
     getGameRequestSchema,
-    getGameRequest,
+    GetGameRequest,
     playMatchRequestSchema,
-    playMatchRequest,
+    PlayMatchRequest,
     getNewMatchRequestSchema,
-    getNewMatchRequest
+    GetNewMatchRequest
 } from "./models";
 import {
     IGame,
-    getGameModel
+    Game
 } from "./models/game.model";
 import {
+    Item,
     IItem,
     RatingType,
-    getItemModel
+    EloRating,
+    Glicko2Rating
 } from "./models/item.model";
 import { ErrorHandler } from "./error";
 import { logger } from "./utils";
 
 export const addGame = async (req, res, next) => {
     try {
-        // const { error, value }: {error, value: addGameRequest} = addGameRequestSchema.validate(req.body);
-        // if (error) throw new ErrorHandler(BAD_REQUEST, error);
-    
-        // const { items, ...gameWithoutItems } = value;
-    
-        // const insertedItems = await getItem(RatingType.Elo).insertMany(items).catch(error => {
-        //     throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
-        // });
-    
-        // const newGame = new Game({
-        //     ...gameWithoutItems,
-        //     items: insertedItems
-        // });
-
-        // const insertedGame = await newGame.save().catch(error => {
-        //     throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
-        // });
-    
-        // res.status(CREATED).json({ insertedGame, insertedItems });
-
-
-        const { error, value }: {error, value: addGameRequest} = addGameRequestSchema.validate(req.body);
+        const { error, value }: { error, value: AddGameRequest } = addGameRequestSchema.validate(req.body);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
     
-        const Game = getGameModel(RatingType.Elo);
+        value.items = value.items.map(item => ({
+            ...item,
+            rating: new EloRating()
+        }));
+        
         const newGame = new Game(value);
     
         const insertedGame = await newGame.save().catch(error => {
