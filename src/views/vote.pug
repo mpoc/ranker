@@ -23,7 +23,7 @@ html(lang='en')
             const makeImagesClickable = () => {
                 Array.prototype.forEach.call(
                     document.getElementsByClassName("choice"),
-                    img => img.addEventListener("click", () => vote(img.getAttribute("id")))
+                    img => img.addEventListener("click", () => vote(img.getAttribute("item-id")))
                 );
             }
 
