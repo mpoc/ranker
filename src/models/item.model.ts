@@ -4,10 +4,77 @@ export interface IItem extends mongoose.Document {
     title: string,
     url: string,
     matchCount: number,
-    elo: number
+    rating: IRating
 };
 
-const ItemSchema = new mongoose.Schema({
+export interface IRating extends mongoose.Document {
+    rating: number;
+}
+
+export interface IEloRating extends IRating {}
+
+export interface IGlicko2Rating extends IRating {
+    defaultRating: number;
+    ratingDeviation: number;
+    tau: number;
+    volatility: number;
+}
+
+export enum RatingType {
+    Elo,
+    Glicko2
+}
+
+const EloRatingSchema = new mongoose.Schema({
+    elo: {
+        type: Number,
+        default: 1000.0,
+        required: true
+    }
+}, { versionKey: false });
+
+const Glicko2RatingSchema = new mongoose.Schema({
+    defaultRating: {
+        type: Number,
+        default: 1500.0,
+        required: true
+    },
+    rating: {
+        type: Number,
+        default: 1500.0,
+        required: true        
+    },
+    ratingDeviation: {
+        type: Number,
+        default: 350.0,
+        required: true        
+    },
+    tau: {
+        type: Number,
+        default: 0.5,
+        required: true        
+    },
+    volatility: {
+        type: Number,
+        default: 0.06,
+        required: true        
+    }
+}, { versionKey: false });
+
+export const getRatingSchema = (ratingType: RatingType) => {
+    switch (ratingType) {
+        case RatingType.Elo: {
+            return EloRatingSchema;
+            break;
+        }
+        case RatingType.Elo: {
+            return Glicko2RatingSchema;
+            break;
+        }
+    }
+}
+
+export const createItemSchema = (ratingSchema: mongoose.Schema) => new mongoose.Schema({
     title: {
         type: String,
         required: true
@@ -21,11 +88,12 @@ const ItemSchema = new mongoose.Schema({
         default: 0,
         required: true
     },
-    elo: {
-        type: Number,
-        default: 1000.0,
+    rating: {
+        type: ratingSchema,
+        default: () => ({}),
         required: true
     }
-}, { versionKey: false });
+}, { versionKey: false, strict: false });
 
-export default mongoose.model<IItem>("Item", ItemSchema);
+export const getItemModel = (ratingType: RatingType) =>
+    mongoose.model<IItem>("Item", createItemSchema(getRatingSchema(ratingType)));

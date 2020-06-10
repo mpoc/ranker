@@ -1,20 +1,26 @@
 import mongoose from "mongoose";
-import { IItem } from "./item.model";
+import {
+    IItem,
+    RatingType,
+    createItemSchema,
+    getRatingSchema
+} from "./item.model";
 
 export interface IGame extends mongoose.Document {
     title: string,
-    items: IItem['_id'],
+    items: IItem[],
 };
 
-const GameSchema = new mongoose.Schema({
+const createGameSchema = (ratingType: RatingType) => new mongoose.Schema({
     title: {
         type: String,
         required: true
     },
     items: {
-        type: [mongoose.Schema.Types.ObjectId],
+        type: [createItemSchema(getRatingSchema(ratingType))],
         required: true
     }
-}, { versionKey: false });
+}, { versionKey: false, strict: false });
 
-export default mongoose.model<IGame>("Game", GameSchema);
+export const getGameModel = (ratingType: RatingType) =>
+    mongoose.model<IGame>("Game", createGameSchema(ratingType));
