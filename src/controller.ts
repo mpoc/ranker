@@ -54,28 +54,28 @@ export const addGame = async (req, res, next) => {
 
 export const getGame = async (req, res, next) => {
     try {
-        const { error, value }: { error, value: getGameRequest } = getGameRequestSchema.validate(req.query);
+        const { error, value }: { error, value: GetGameRequest } = getGameRequestSchema.validate(req.query);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
     
-        const gameExists = await getGameModel(RatingType.Elo).exists({ _id: value.id }).catch(error => {
-            throw new ErrorHandler(BAD_REQUEST, error.reason)
-        });
+        // const gameExists = await Game.exists({ _id: value.id }).catch(error => {
+        //     throw new ErrorHandler(BAD_REQUEST, error.reason)
+        // });
 
-        if (!gameExists) throw new ErrorHandler(NOT_FOUND, "Game not found");
+        // if (!gameExists) throw new ErrorHandler(NOT_FOUND, "Game not found");
 
-        // Get a game by id with its items sorted by elo
-        const foundGame = await getGameModel(RatingType.Elo).aggregate([
+        // Get a game by id with its items sorted by elo.
+        // In the grouping stage, you have to name each field,
+        // maybe find a more decoupled way of doing it?
+        const foundGame = await Game.aggregate([
             { '$match': { '_id': mongoose.Types.ObjectId(value.id) } },
-            { '$lookup': { 'from': 'items', 'localField': 'items', 'foreignField': '_id', 'as': 'items' } },
             { '$unwind': { 'path': '$items' } },
-            { '$sort': { 'items.elo': -1 } },
+            { '$sort': { 'items.rating.rating': -1 } },
             { '$group': { '_id': '$_id', 'items': { '$push': '$items' }, 'title': { '$first': '$title' } } }
         ]).exec().catch(error => { throw new ErrorHandler(INTERNAL_SERVER_ERROR, error) });
 
-        // Maybe not necessary?
         if (!foundGame || !foundGame.length) return next(new ErrorHandler(NOT_FOUND, "Game not found"));
     
-        res.status(OK).json({ foundGame });
+        res.status(OK).json(foundGame[0]);
     } catch (error) {
         next(error);
     }
