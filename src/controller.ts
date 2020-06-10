@@ -28,7 +28,7 @@ import {
     Glicko2Rating
 } from "./models/item.model";
 import { ErrorHandler } from "./error";
-import { logger } from "./utils";
+import { EloPlayer, EloMatch } from "./ratings/elo";
 
 export const addGame = async (req, res, next) => {
     try {
@@ -83,66 +83,46 @@ export const getGame = async (req, res, next) => {
 
 export const playMatch = async (req, res, next) => {
     try {
-        const { error, value }: { error, value: playMatchRequest } = playMatchRequestSchema.validate(req.body);
+        const { error, value }: { error, value: PlayMatchRequest } = playMatchRequestSchema.validate(req.body);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
 
-        // const items = await Item.find()
-        //     .where("_id")
-        //     .in(value.itemIds)
-        //     .exec()
-        //     .catch((error) => {
-        //         throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
-        //     });
+        const game = await Game.findOne({
+            "items._id": value.itemIds[0],
+        }).exec().catch((error) => {
+            throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
+        });
 
-        const item1 = await getItemModel(RatingType.Elo).findById(value.itemIds[0])
-            .exec()
-            .catch((error) => {
-                throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
-            });
-        const item2 = await getItemModel(RatingType.Elo).findById(value.itemIds[1])
-            .exec()
-            .catch((error) => {
-                throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
-            });
-        const items = [item1, item2];
+        const items = game.items.filter(item => value.itemIds.includes(String(item._id)))
+        
+        if (items.length != value.itemIds.length) {
+            throw new ErrorHandler(BAD_REQUEST, "Some item ids invalid or belong to different games");
+        }
 
-        const returnedItemIds = items.map(item => String(item._id));
-        const itemArraydifference = value.itemIds.filter(item => !returnedItemIds.includes(item));
+        // const returnedItemIds = items.map(item => String(item._id));
+        // const itemArraydifference = value.itemIds.filter(item => !returnedItemIds.includes(item));
 
-        if (itemArraydifference.length > 0) throw new ErrorHandler(BAD_REQUEST, "Invalid item ids: " + itemArraydifference.join(", "));
-
-        // TODO check if items are from the same game
-        // This might require changing the schema so that items would hold a
-        // single instance of a game instead of games holding instances of items
+        // if (itemArraydifference.length > 0) throw new ErrorHandler(BAD_REQUEST, "Invalid item ids: " + itemArraydifference.join(", "));
 
         // Disallow more than 2 items for now
         if (items.length > 2) throw new ErrorHandler(BAD_REQUEST, "Cannot play a match with more than 2 items");
 
-        const players: IItem[] = items.map(item => item.toObject());
-        const winningProbabilities = [
-            (1.0 / (1.0 + Math.pow(10, ((players[1].rating.rating - players[0].rating.rating) / 400)))),
-            (1.0 / (1.0 + Math.pow(10, ((players[0].rating.rating - players[1].rating.rating) / 400))))
-        ];
-        const kValue = 30;
-        const scores = players.map((player, index) => index == value.winnerIndex ? 1 : 0);
-        const newElo = players.map((player, index) => players[index].rating.rating + kValue * (scores[index] - winningProbabilities[index]));
+        const players = items.map(item => new EloPlayer(item.rating.rating));
+        const eloMatch = new EloMatch();
+        eloMatch.updateRatings(players, items.map(item => item._id == value.winnerId));
 
         // Possibly create a match entry here to track progress
 
-        newElo.map((elo, index) => {
-            items[index].rating.rating = elo;
-            items[index].matchCount++;
+        items[0].rating.rating = players[0].rating;
+        items[0].matchCount++;
+        items[1].rating.rating = players[1].rating;
+        items[1].matchCount++;
+
+        game.markModified('items');
+        const savedGame = await game.save().catch((error) => {
+            throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
         });
 
-        // This is not very good. Figure out a way to bulk save.
-        const itemsToSave = items.map(async (item) => 
-            await item.save().catch(error => {
-                throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
-            })
-        );
-        const savedItems = await Promise.all(itemsToSave);
-        
-        res.status(OK).json({ savedItems });
+        res.status(OK).json({ items });
     } catch (error) {
         next(error);
     }
@@ -150,10 +130,10 @@ export const playMatch = async (req, res, next) => {
 
 export const getNewMatch = async (req, res, next) => {
     try {
-        const { error, value }: { error, value: getNewMatchRequest } = getNewMatchRequestSchema.validate(req.query);
+        const { error, value }: { error, value: GetNewMatchRequest } = getNewMatchRequestSchema.validate(req.query);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
 
-        const gameExists = await getGameModel(RatingType.Elo).exists({ _id: value.gameId }).catch(error => {
+        const gameExists = await Game.exists({ _id: value.gameId }).catch(error => {
             throw new ErrorHandler(BAD_REQUEST, error.reason)
         });
 
@@ -182,7 +162,7 @@ export const getNewMatch = async (req, res, next) => {
         //     { '$sample': { 'size': 2 } }
         // ]).exec().catch(error => { throw new ErrorHandler(INTERNAL_SERVER_ERROR, error) });
 
-        const game = await getGameModel(RatingType.Elo).findById(value.gameId).exec().catch(error => {
+        const game = await Game.findById(value.gameId).exec().catch(error => {
             throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
         });
 
@@ -196,10 +176,10 @@ export const getNewMatch = async (req, res, next) => {
             }, [...numbers]
         )
 
-        const item1 = await getItemModel(RatingType.Elo).findById(game.items[shuffledNumbers[0]]).exec().catch(error => {
+        const item1 = await Item.findById(game.items[shuffledNumbers[0]]).exec().catch(error => {
             throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
         });
-        const item2 = await getItemModel(RatingType.Elo).findById(game.items[shuffledNumbers[1]]).exec().catch(error => {
+        const item2 = await Item.findById(game.items[shuffledNumbers[1]]).exec().catch(error => {
             throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
         });
 

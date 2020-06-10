@@ -31,13 +31,13 @@ export type GetGameRequest = {
 export const playMatchRequestSchema = Joi.object({
     itemIds: Joi.array().items(
         Joi.string().required()
-    ).min(2).unique().required(),
-    winnerIndex: Joi.number().integer().min(0).max(Joi.ref('itemIds', { adjust: (value) => value.length - 1 })).required()
+    ).min(2).unique().has(Joi.ref('/winnerId')).required(),
+    winnerId: Joi.string().required()
 })
 
 export type PlayMatchRequest = {
     itemIds: string[],
-    winnerIndex: number
+    winnerId: string
 }
 
 export const getNewMatchRequestSchema = Joi.object({
