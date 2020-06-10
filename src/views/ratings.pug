@@ -26,7 +26,7 @@ html(lang='en')
 
                 fetch('/api/games?id=' + gameId, options)
                     .then(res => res.json())
-                    .then(res => populateTable(res.foundGame[0].items))
+                    .then(res => populateTable(res.items))
                     .catch(err => console.error(err));
             }
 
@@ -44,7 +44,7 @@ html(lang='en')
                     img.loading = "lazy";
 
                     title.innerHTML = item.title;
-                    elo.innerHTML = item.elo;
+                    elo.innerHTML = item.rating.rating;
                     image.appendChild(img);
                 });
             }
@@ -74,6 +74,6 @@ html(lang='en')
                     thead.thead-dark
                         tr
                             th Title
-                            th Elo
+                            th Rating
                             th Image
                     tbody#items

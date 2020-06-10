@@ -133,12 +133,6 @@ export const getNewMatch = async (req, res, next) => {
         const { error, value }: { error, value: GetNewMatchRequest } = getNewMatchRequestSchema.validate(req.query);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
 
-        const gameExists = await Game.exists({ _id: value.gameId }).catch(error => {
-            throw new ErrorHandler(BAD_REQUEST, error.reason)
-        });
-
-        if (!gameExists) throw new ErrorHandler(NOT_FOUND, "Game not found");
-
         // Get a game, get it's items, sort them in ascending order by
         // matchCount and get the first two
         // const itemsForGame = await Game.aggregate([
@@ -152,6 +146,7 @@ export const getNewMatch = async (req, res, next) => {
         //     { '$limit': 2 }
         // ]).exec().catch(error => { throw new ErrorHandler(INTERNAL_SERVER_ERROR, error) });
 
+        // Get two random items from a game
         // const itemsForGame = await Game.aggregate([
         //     { '$match': { '_id': mongoose.Types.ObjectId(value.gameId) } },
         //     { '$project': { '_id': false, 'items': true } },
@@ -166,6 +161,8 @@ export const getNewMatch = async (req, res, next) => {
             throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
         });
 
+        if (!game) throw new ErrorHandler(NOT_FOUND, "Game not found");
+
         const count = game.items.length;
         const numbers = [...Array(count).keys()];
         const shuffledNumbers = numbers.reduce( 
@@ -176,14 +173,10 @@ export const getNewMatch = async (req, res, next) => {
             }, [...numbers]
         )
 
-        const item1 = await Item.findById(game.items[shuffledNumbers[0]]).exec().catch(error => {
-            throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
-        });
-        const item2 = await Item.findById(game.items[shuffledNumbers[1]]).exec().catch(error => {
-            throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
-        });
-
-        const itemsForGame = [item1, item2];
+        const itemsForGame = [
+            game.items[shuffledNumbers[0]],
+            game.items[shuffledNumbers[1]]
+        ];
 
         res.status(OK).json({ itemsForGame });
     } catch (error) {

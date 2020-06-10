@@ -23,15 +23,14 @@ html(lang='en')
             const makeImagesClickable = () => {
                 Array.prototype.forEach.call(
                     document.getElementsByClassName("choice"),
-                    img => img.addEventListener("click", () => vote(img.getAttribute("index")))
+                    img => img.addEventListener("click", () => vote(img.getAttribute("id")))
                 );
             }
 
-            const vote = (winnerIndex) => {
-                console.log("function called")
+            const vote = (winnerId) => {
                 const json = {
                     "itemIds": itemIdArray,
-                    "winnerIndex": winnerIndex
+                    "winnerId": winnerId
                 };
 
                 const options = {
@@ -42,7 +41,6 @@ html(lang='en')
                     }
                 }
 
-                console.log({json, options});
                 fetch('/api/matches', options)
                     .then(res => res.json())
                     .then(res => console.log(res))
@@ -72,8 +70,8 @@ html(lang='en')
                 const firstChoice = document.getElementById('firstChoice');
                 const secondChoice = document.getElementById('secondChoice');
 
-                firstChoice.setAttribute('index', 0);
-                secondChoice.setAttribute('index', 1);
+                firstChoice.setAttribute('id', itemsForGame[0]._id);
+                secondChoice.setAttribute('id', itemsForGame[1]._id);
 
                 firstChoice.setAttribute('src', itemsForGame[0].url);
                 secondChoice.setAttribute('src', itemsForGame[1].url);
@@ -92,10 +90,6 @@ html(lang='en')
                     vote(1);
                 }
             });
-
-            function logKey(e) {
-            log.textContent += ` ${e.code}`;
-            }
 
             window.onload = () => {
                 makeImagesClickable();
