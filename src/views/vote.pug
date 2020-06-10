@@ -70,8 +70,8 @@ html(lang='en')
                 const firstChoice = document.getElementById('firstChoice');
                 const secondChoice = document.getElementById('secondChoice');
 
-                firstChoice.setAttribute('id', itemsForGame[0]._id);
-                secondChoice.setAttribute('id', itemsForGame[1]._id);
+                firstChoice.setAttribute('item-id', itemsForGame[0]._id);
+                secondChoice.setAttribute('item-id', itemsForGame[1]._id);
 
                 firstChoice.setAttribute('src', itemsForGame[0].url);
                 secondChoice.setAttribute('src', itemsForGame[1].url);
@@ -85,9 +85,9 @@ html(lang='en')
 
             document.addEventListener('keydown', (e) => {
                 if (e.code == "ArrowLeft") {
-                    vote(0);
+                    vote(document.getElementById('firstChoice').getAttribute("item-id"));
                 } else if (e.code == "ArrowRight") {
-                    vote(1);
+                    vote(document.getElementById('secondChoice').getAttribute("item-id"));
                 }
             });
 
