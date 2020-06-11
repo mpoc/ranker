@@ -81,6 +81,18 @@ html(lang='en')
 
                 firstTitle.innerHTML = items[0].title;
                 secondTitle.innerHTML = items[1].title;
+
+                //- const firstRating = document.getElementById('firstRating');
+                //- const secondRating = document.getElementById('secondRating');
+
+                //- firstRating.innerHTML = "Rating: " + items[0].rating.rating;
+                //- secondRating.innerHTML = "Rating: " + items[1].rating.rating;
+
+                const firstDeviation = document.getElementById('firstDeviation');
+                const secondDeviation = document.getElementById('secondDeviation');
+
+                firstDeviation.innerHTML = "Rating deviation: " + items[0].rating.ratingDeviation;
+                secondDeviation.innerHTML = "Rating deviation: " + items[1].rating.ratingDeviation;
             }
 
             document.addEventListener('keydown', (e) => {
@@ -112,3 +124,9 @@ html(lang='en')
                         tr
                             td#firstTitle
                             td#secondTitle
+                        //- tr
+                        //-     td#firstRating
+                        //-     td#secondRating
+                        tr
+                            td#firstDeviation
+                            td#secondDeviation

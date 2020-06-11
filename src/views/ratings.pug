@@ -30,21 +30,25 @@ html(lang='en')
                     .catch(err => console.error(err));
             }
 
+            let lowestRank = 1;
+
             const populateTable = (items) => {
                 const table = document.getElementById("items");
                 items.forEach(item => {
                     let row = table.insertRow();
 
-                    let title = row.insertCell(0);
-                    let elo = row.insertCell(1);
-                    let image = row.insertCell(2);
+                    let rank = row.insertCell(0);
+                    let title = row.insertCell(1);
+                    let elo = row.insertCell(2);
+                    let image = row.insertCell(3);
 
                     let img = document.createElement('img'); 
                     img.src = item.url;
                     img.loading = "lazy";
 
+                    rank.innerHTML = lowestRank++;
                     title.innerHTML = item.title;
-                    elo.innerHTML = item.rating.rating;
+                    elo.innerHTML = item.rating.rating + "<br>" + item.rating.ratingDeviation;
                     image.appendChild(img);
                 });
             }
@@ -73,6 +77,7 @@ html(lang='en')
                 table.table.table-striped.table-bordered.table-hover
                     thead.thead-dark
                         tr
+                            th Rank
                             th Title
                             th Rating
                             th Image
