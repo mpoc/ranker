@@ -43,7 +43,7 @@ html(lang='en')
 
                 fetch('/api/matches', options)
                     .then(res => res.json())
-                    .then(res => console.log(res))
+                    .then(data => console.log(data))
                     .catch(err => console.error(err));
 
                 location.reload();
@@ -60,27 +60,27 @@ html(lang='en')
 
                 fetch('/api/matches/new?gameId=' + gameId, options)
                     .then(res => res.json())
-                    .then(res => setImages(res))
+                    .then(data => { if (data.success) setImages(data.data) })
                     .catch(err => console.error(err));
             }
 
-            const setImages = ({ itemsForGame }) => {
-                itemIdArray = itemsForGame.map(item => item._id);
+            const setImages = (items) => {
+                itemIdArray = items.map(item => item._id);
 
                 const firstChoice = document.getElementById('firstChoice');
                 const secondChoice = document.getElementById('secondChoice');
 
-                firstChoice.setAttribute('item-id', itemsForGame[0]._id);
-                secondChoice.setAttribute('item-id', itemsForGame[1]._id);
+                firstChoice.setAttribute('item-id', items[0]._id);
+                secondChoice.setAttribute('item-id', items[1]._id);
 
-                firstChoice.setAttribute('src', itemsForGame[0].url);
-                secondChoice.setAttribute('src', itemsForGame[1].url);
+                firstChoice.setAttribute('src', items[0].url);
+                secondChoice.setAttribute('src', items[1].url);
 
                 const firstTitle = document.getElementById('firstTitle');
                 const secondTitle = document.getElementById('secondTitle');
 
-                firstTitle.innerHTML = itemsForGame[0].title;
-                secondTitle.innerHTML = itemsForGame[1].title;
+                firstTitle.innerHTML = items[0].title;
+                secondTitle.innerHTML = items[1].title;
             }
 
             document.addEventListener('keydown', (e) => {

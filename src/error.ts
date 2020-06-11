@@ -1,3 +1,5 @@
+import { ApiResponse } from "./utils";
+
 export class ErrorHandler extends Error {
     statusCode: number;
     constructor(statusCode, error) {
@@ -9,10 +11,10 @@ export class ErrorHandler extends Error {
 
 export const handleError = (err, res) => {
     const { statusCode = 500, message } = err;
-    res.status(statusCode).json({
-        error: {
-            statusCode,
-            message
-        }
-    });
+    const response: ApiResponse = {
+        success: false,
+        message: message,
+        data: {}
+    }
+    res.status(statusCode).json(response);
 };

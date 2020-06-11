@@ -26,7 +26,7 @@ html(lang='en')
 
                 fetch('/api/games?id=' + gameId, options)
                     .then(res => res.json())
-                    .then(res => populateTable(res.items))
+                    .then(data => { if (data.success) populateTable(data.data.items) })
                     .catch(err => console.error(err));
             }
 

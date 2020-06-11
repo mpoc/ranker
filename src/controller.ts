@@ -29,6 +29,7 @@ import {
 } from "./models/item.model";
 import { ErrorHandler } from "./error";
 import { EloPlayer, EloMatch } from "./ratings/elo";
+import { success } from "./utils";
 
 export const addGame = async (req, res, next) => {
     try {
@@ -46,7 +47,11 @@ export const addGame = async (req, res, next) => {
             throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)
         });
     
-        res.status(CREATED).json({ insertedGame });
+        success({
+            success: true,
+            message: "Game created successfully",
+            data: insertedGame
+        }, res);
     } catch (error) {
         next(error);
     }
@@ -75,7 +80,11 @@ export const getGame = async (req, res, next) => {
 
         if (!foundGame || !foundGame.length) return next(new ErrorHandler(NOT_FOUND, "Game not found"));
     
-        res.status(OK).json(foundGame[0]);
+        success({
+            success: true,
+            message: "Game found",
+            data: foundGame[0]
+        }, res);
     } catch (error) {
         next(error);
     }
@@ -122,7 +131,11 @@ export const playMatch = async (req, res, next) => {
             throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
         });
 
-        res.status(OK).json({ items });
+        success({
+            success: true,
+            message: "Items updated successfully",
+            data: items
+        }, res);
     } catch (error) {
         next(error);
     }
@@ -178,7 +191,11 @@ export const getNewMatch = async (req, res, next) => {
             game.items[shuffledNumbers[1]]
         ];
 
-        res.status(OK).json({ itemsForGame });
+        success({
+            success: true,
+            message: "Items found",
+            data: itemsForGame
+        }, res);
     } catch (error) {
         next(error);
     }

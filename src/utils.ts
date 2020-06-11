@@ -1,5 +1,7 @@
 import winston from "winston";
 import morgan from 'morgan';
+import { Response } from "express";
+import { OK } from "http-status-codes";
 
 const logFormat = winston.format.printf((info) => {
     return `${info.timestamp} ${info.level}: ${info.message}`;
@@ -25,3 +27,13 @@ const stream = {
 };
 
 export const httpLogger = morgan("tiny", { stream });
+
+export interface ApiResponse {
+    success: boolean;
+    message: string;
+    data: object;
+}
+
+export const success = (response: ApiResponse, res: Response) => {
+    res.status(OK).json(response);
+}
