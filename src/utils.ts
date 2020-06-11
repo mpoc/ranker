@@ -34,6 +34,26 @@ export interface ApiResponse {
     data: object;
 }
 
-export const success = (response: ApiResponse, res: Response) => {
-    res.status(OK).json(response);
+export const respond = (response: ApiResponse, statusCode: number, res: Response) => {
+    res.status(statusCode).json(response);
+}
+
+export const shuffle = (array: any[]) => {
+    let j, x, i;
+    for (i = array.length - 1; i > 0; i--) {
+        j = Math.floor(Math.random() * (i + 1));
+        x = array[i];
+        array[i] = array[j];
+        array[j] = x;
+    }
+    return array;
+}
+
+// Exclusive
+export const getRandomInt = (max: number) => {
+    return Math.floor(Math.random() * Math.floor(max));
+}
+
+export const getRandomItem = (array: any[]) => {
+    return array[getRandomInt(array.length)];
 }

@@ -40,6 +40,7 @@ app.get("/api/matches/new", getNewMatch);
 app.post("/api/matches", playMatch);
 
 app.use((err, req, res, next) => {
+    if (!(err instanceof ErrorHandler)) logger.error(err);
     handleError(err, res);
 });
 

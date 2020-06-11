@@ -56,11 +56,12 @@ const Glicko2RatingSchema = new mongoose.Schema({
     }
 }, { versionKey: false });
 
+// Replacing rating: IRating with rating: any for now
 export interface IItem extends mongoose.Document {
     title: string,
     url: string,
     matchCount: number,
-    rating: IRating
+    rating: any
 };
 
 export const ItemSchema = new mongoose.Schema({

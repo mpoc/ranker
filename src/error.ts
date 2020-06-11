@@ -1,4 +1,4 @@
-import { ApiResponse } from "./utils";
+import { respond } from "./utils";
 
 export class ErrorHandler extends Error {
     statusCode: number;
@@ -11,10 +11,9 @@ export class ErrorHandler extends Error {
 
 export const handleError = (err, res) => {
     const { statusCode = 500, message } = err;
-    const response: ApiResponse = {
+    respond({
         success: false,
         message: message,
         data: {}
-    }
-    res.status(statusCode).json(response);
+    }, statusCode, res);
 };
