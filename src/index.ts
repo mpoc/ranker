@@ -5,6 +5,7 @@ import {
     getGame,
     playMatch,
     getNewMatch,
+    addItems,
     vote,
     viewRatings
 } from "./controller";
@@ -39,7 +40,12 @@ app.get("/api/matches/new", getNewMatch);
 // Add a match
 app.post("/api/matches", playMatch);
 
+// Add an item to a game
+app.patch("/api/items", addItems);
+
 app.use((err, req, res, next) => {
+    // If error was not thrown manually with ErrorHandler, log the error (every
+    // expected error should be caught and re-thrown with ErrorHandler)
     if (!(err instanceof ErrorHandler)) logger.error(err);
     handleError(err, res);
 });

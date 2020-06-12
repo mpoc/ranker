@@ -15,7 +15,9 @@ import {
     playMatchRequestSchema,
     PlayMatchRequest,
     getNewMatchRequestSchema,
-    GetNewMatchRequest
+    GetNewMatchRequest,
+    addItemsRequestSchema,
+    AddItemsRequest
 } from "./models";
 import {
     IGame,
@@ -260,6 +262,38 @@ export const getNewMatch = async (req, res, next) => {
             success: true,
             message: "Items found",
             data: itemsForGame
+        }, OK, res);
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const addItems = async (req, res, next) => {
+    try {
+        const { error, value }: { error, value: AddItemsRequest } = addItemsRequestSchema.validate(req.body);
+        if (error) throw new ErrorHandler(BAD_REQUEST, error);
+
+        const game = await Game.findById(value.gameId).exec().catch((error) => {
+            throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
+        });
+
+        if (!game) throw new ErrorHandler(NOT_FOUND, "Game not found");
+
+        const itemsToAdd = value.items.map(item => new Item({
+            ...item,
+            rating: new Glicko2Rating()
+        }));
+        game.items.push(...itemsToAdd);
+
+        game.markModified('items');
+        const updatedGame = await game.save().catch((error) => {
+            throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
+        });
+
+        respond({
+            success: true,
+            message: "Items added to game",
+            data: itemsToAdd
         }, OK, res);
     } catch (error) {
         next(error);
