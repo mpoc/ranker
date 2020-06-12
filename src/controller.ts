@@ -41,10 +41,13 @@ export const addGame = async (req, res, next) => {
         const { error, value }: { error, value: AddGameRequest } = addGameRequestSchema.validate(req.body);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
     
-        value.items = value.items.map(item => ({
-            ...item,
-            rating: new Glicko2Rating()
-        }));
+        // Items is optional, if not provided, create a game without items
+        if (value.items) {
+            value.items = value.items.map(item => ({
+                ...item,
+                rating: new Glicko2Rating()
+            }));
+        }
         
         const newGame = new Game(value);
     
@@ -232,18 +235,21 @@ export const getNewMatch = async (req, res, next) => {
 
         if (!game) throw new ErrorHandler(NOT_FOUND, "Game not found");
 
+        if (game.items.length < 2) throw new ErrorHandler(BAD_REQUEST, "Game does not contain enough items for a match")
+
         let itemsForGame;
         
         // Either
         // Pick two items at random OR
         // Pick one random item from the bottom 30% of rating deviation and one random item
-        const randomInt = getRandomInt(2);
-        if (randomInt == 0) {
+        const random = Math.random();
+        console.log(random);
+        if (random < 0.5) {
             // Get just two random items
             let items = game.items;
             shuffle(items);
             itemsForGame = [items[0], items[1]];
-        } else if (randomInt == 1) {
+        } else {
             // Get two random items from the part with high rating deviation
             // Possible to get no item if there are not enough items
             const sortedByDeviation = game.items.sort((a, b) => b.rating.ratingDeviation - a.rating.ratingDeviation);
@@ -279,11 +285,11 @@ export const addItems = async (req, res, next) => {
 
         if (!game) throw new ErrorHandler(NOT_FOUND, "Game not found");
 
-        const itemsToAdd = value.items.map(item => new Item({
+        const items = value.items.map(item => new Item({
             ...item,
             rating: new Glicko2Rating()
         }));
-        game.items.push(...itemsToAdd);
+        game.items.push(...items);
 
         game.markModified('items');
         const updatedGame = await game.save().catch((error) => {
@@ -293,7 +299,7 @@ export const addItems = async (req, res, next) => {
         respond({
             success: true,
             message: "Items added to game",
-            data: itemsToAdd
+            data: items
         }, OK, res);
     } catch (error) {
         next(error);

@@ -8,12 +8,12 @@ export const addGameRequestSchema = Joi.object({
             title: Joi.string().required(),
             url: Joi.string().uri().required()
         }
-    )).min(2).required()
+    ))
 });
 
 export type AddGameRequest = {
     title: string,
-    items: {
+    items?: {
         title: string,
         url: string,
         rating?: IRating
@@ -55,7 +55,7 @@ export const addItemsRequestSchema = Joi.object({
             title: Joi.string().required(),
             url: Joi.string().uri().required()
         }
-    )).required()
+    )).min(1).required()
 });
 
 export type AddItemsRequest = {
