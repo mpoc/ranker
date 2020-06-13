@@ -7,6 +7,11 @@ import {
     NOT_FOUND
 } from "http-status-codes";
 import Player, { Outcome, Match, OutcomeReport } from 'glicko-two';
+import metascraper from "metascraper";
+import metascraperImage from "metascraper-image";
+import metascraperTitle from "metascraper-title";
+import metascraperUrl from "metascraper-url";
+import axios from "axios";
 import {
     addGameRequestSchema,
     AddGameRequest,
@@ -17,7 +22,10 @@ import {
     getNewMatchRequestSchema,
     GetNewMatchRequest,
     addItemsRequestSchema,
-    AddItemsRequest
+    AddItemsRequest,
+    autoAddGameRequestSchema,
+    AutoAddGameRequest,
+    ItemToAdd
 } from "./models";
 import {
     IGame,
@@ -60,6 +68,46 @@ export const addGame = async (req, res, next) => {
             message: "Game created successfully",
             data: insertedGame
         }, CREATED, res);
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const autoAddGame = async (req, res, next) => {
+    try {
+        const { error, value }: { error, value: AutoAddGameRequest } = autoAddGameRequestSchema.validate(req.body);
+        if (error) throw new ErrorHandler(BAD_REQUEST, error);
+
+        // Temporary "rate limiting"
+        if (value.itemUrls.length > 7) throw new ErrorHandler(BAD_REQUEST, "Too many items to retrieve data for");
+
+        const urlsHtml = await Promise.all(
+            value.itemUrls.map(async url => ({
+                url: url,
+                response: await axios.get(url)
+            }))
+        );
+
+        const scraper = metascraper([
+            metascraperImage(),
+            metascraperTitle(),
+            metascraperUrl(),
+        ]);
+
+        const metadataArray: ItemToAdd[] = await Promise.all(
+            urlsHtml.map(
+                async ({ url, response }) =>
+                await scraper({ html: response.data, url: url })
+            )
+        );
+    
+        respond({
+            success: true,
+            message: "Auto game data retrieved successfully",
+            data: {
+                items: metadataArray
+            }
+        }, OK, res);
     } catch (error) {
         next(error);
     }
@@ -204,30 +252,6 @@ export const getNewMatch = async (req, res, next) => {
     try {
         const { error, value }: { error, value: GetNewMatchRequest } = getNewMatchRequestSchema.validate(req.query);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
-
-        // Get a game, get it's items, sort them in ascending order by
-        // matchCount and get the first two
-        // const itemsForGame = await Game.aggregate([
-        //     { '$match': { '_id': mongoose.Types.ObjectId(value.gameId) } },
-        //     { '$project': { '_id': false, 'items': true } },
-        //     { '$lookup': { 'from': 'items', 'localField': 'items', 'foreignField': '_id', 'as': 'items' } },
-        //     { '$unwind': { 'path': '$items' } },
-        //     { '$replaceRoot': { 'newRoot': { '$mergeObjects': [ '$$ROOT', '$items' ] } } },
-        //     { '$project': { 'items': false } },
-        //     { '$sort': { 'matchCount': 1 } },
-        //     { '$limit': 2 }
-        // ]).exec().catch(error => { throw new ErrorHandler(INTERNAL_SERVER_ERROR, error) });
-
-        // Get two random items from a game
-        // const itemsForGame = await Game.aggregate([
-        //     { '$match': { '_id': mongoose.Types.ObjectId(value.gameId) } },
-        //     { '$project': { '_id': false, 'items': true } },
-        //     { '$lookup': { 'from': 'items', 'localField': 'items', 'foreignField': '_id', 'as': 'items' } },
-        //     { '$unwind': { 'path': '$items' } },
-        //     { '$replaceRoot': { 'newRoot': { '$mergeObjects': [ '$$ROOT', '$items' ] } } },
-        //     { '$project': { 'items': false } },
-        //     { '$sample': { 'size': 2 } }
-        // ]).exec().catch(error => { throw new ErrorHandler(INTERNAL_SERVER_ERROR, error) });
 
         const game = await Game.findById(value.gameId).exec().catch(error => {
             throw new ErrorHandler(INTERNAL_SERVER_ERROR, error)

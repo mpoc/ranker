@@ -7,17 +7,13 @@ export const addGameRequestSchema = Joi.object({
         Joi.object({
             title: Joi.string().required(),
             url: Joi.string().uri().required()
-        }
-    ))
+        })
+    )
 });
 
 export type AddGameRequest = {
     title: string,
-    items?: {
-        title: string,
-        url: string,
-        rating?: IRating
-    }[]
+    items?: (ItemToAdd & { rating?: IRating })[]
 };
 
 export const getGameRequestSchema = Joi.object({
@@ -60,8 +56,22 @@ export const addItemsRequestSchema = Joi.object({
 
 export type AddItemsRequest = {
     gameId: string,
-    items: {
-        title: string,
-        url: string
-    }[]
+    items: ItemToAdd[]
 };
+
+export const autoAddGameRequestSchema = Joi.object({
+    title: Joi.string().required(),
+    itemUrls: Joi.array().items(
+        Joi.string().uri().required()
+    ).min(1).required()
+});
+
+export type AutoAddGameRequest = {
+    title: string,
+    itemUrls: string[]
+};
+
+export type ItemToAdd = {
+    title: string,
+    url: string
+}
