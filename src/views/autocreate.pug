@@ -20,12 +20,29 @@ html(lang='en')
             const addUrlRow = () => {
                 const table = document.getElementById("itemUrls");
                 let row = table.insertRow();
+
                 let url = row.insertCell(0);
-                let input = document.createElement('input'); 
+                let input = document.createElement('input');
                 input.type = "url";
                 input.classList.add("itemUrl");
                 input.classList.add("form-control");
                 url.appendChild(input);
+
+                let removeRow = row.insertCell(1);
+                let removeButton = document.createElement('button');
+                removeButton.setAttribute("type", "button");
+                removeButton.classList.add("close");
+                removeButton.classList.add("text-danger");
+                removeButton.setAttribute("aria-label", "Close");
+                removeButton.innerHTML =
+                    `<span aria-hidden="true">&times;</span>`;
+                removeButton.addEventListener('click', (el) => deleteRow(el.target.parentNode.parentNode.parentNode));
+                removeRow.appendChild(removeButton);
+            }
+
+            const deleteRow = (row) => {
+                const rowIndex = row.rowIndex;
+                document.getElementById("itemUrls").deleteRow(rowIndex - 1);
             }
 
             const submit = (title, itemUrls) => {
@@ -42,9 +59,11 @@ html(lang='en')
                     }
                 };
 
+                setSubmitButtonLoading(true);
                 fetch('/api/games/auto', options)
                     .then(res => res.json())
                     .then(data => {
+                        setSubmitButtonLoading(false);
                         if (data.success) {
                             const objectToSend = {
                                 title: json.title,
@@ -61,7 +80,31 @@ html(lang='en')
                             window.location.href = url.toString();
                         }
                     })
-                    .catch(err => console.error(err));
+                    .catch(err => {
+                        setSubmitButtonLoading(false);
+                        console.error(err);
+                    });
+            }
+
+            const setSubmitButtonLoading = (isLoading) => {
+                const button = document.getElementById('submitButton');
+                if (isLoading) {
+                    button.disabled = true;
+
+                    let span = document.createElement('span');
+                    span.classList.add("spinner-border");
+                    span.classList.add("spinner-border-sm");
+                    span.setAttribute("role", "status");
+                    span.setAttribute("aria-hidden", "true");
+
+                    button.innerHTML = "";
+                    button.appendChild(span);
+                    button.appendChild(document.createTextNode(" Loading..."));
+                } else {
+                    button.disabled = false;
+                    button.innerHTML = "";
+                    button.appendChild(document.createTextNode("Submit"));
+                }
             }
 
             const getTitle = () => {
@@ -94,6 +137,7 @@ html(lang='en')
                     thead.thead-dark
                         tr
                             th URL
+                            th
                     tbody#itemUrls
                 table.table.table-responsive.table-borderless
                     tbody
@@ -104,4 +148,3 @@ html(lang='en')
                         tr
                             td
                                 button#submitButton.btn.btn-success(type="button") Submit
-

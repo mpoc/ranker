@@ -42,6 +42,27 @@ html(lang='en')
                 )
             }
 
+            const setSubmitButtonLoading = (isLoading) => {
+                const button = document.getElementById('submitButton');
+                if (isLoading) {
+                    button.disabled = true;
+
+                    let span = document.createElement('span');
+                    span.classList.add("spinner-border");
+                    span.classList.add("spinner-border-sm");
+                    span.setAttribute("role", "status");
+                    span.setAttribute("aria-hidden", "true");
+
+                    button.innerHTML = "";
+                    button.appendChild(span);
+                    button.appendChild(document.createTextNode(" Loading..."));
+                } else {
+                    button.disabled = false;
+                    button.innerHTML = "";
+                    button.appendChild(document.createTextNode("Submit"));
+                }
+            }
+
             const submit = (title, items) => {
                 const json = {
                     "title": title,
@@ -56,9 +77,11 @@ html(lang='en')
                     }
                 }
 
+                setSubmitButtonLoading(true);
                 fetch('/api/games', options)
                     .then(res => res.json())
                     .then(data => {
+                        setSubmitButtonLoading(false);
                         if (data.success) {
                             document.getElementById('updateAllImages').disabled = true;
                             document.getElementById('addItemButton').disabled = true;
@@ -89,7 +112,10 @@ html(lang='en')
                             ratingsCell.appendChild(ratingsButton);
                         }
                     })
-                    .catch(err => console.error(err));
+                    .catch(err => {
+                        setSubmitButtonLoading(false);
+                        console.error(err)
+                    });
             }
 
             const fillSentItems = () => {
@@ -117,6 +143,7 @@ html(lang='en')
                 let imageUrlRow = row.insertCell(2);
                 let imagePreviewRow = row.insertCell(3);
                 let updateImageRow = row.insertCell(4);
+                let removeRow = row.insertCell(5);
 
                 let titleInput = document.createElement('input'); 
                 titleInput.type = "text";
@@ -157,11 +184,26 @@ html(lang='en')
                 updateImageButton.innerHTML = "Update image";
                 updateImageButton.addEventListener('click', (el) => updateImageWithButton(el.target));
 
+                let removeButton = document.createElement('button');
+                removeButton.setAttribute("type", "button");
+                removeButton.classList.add("close");
+                removeButton.classList.add("text-danger");
+                removeButton.setAttribute("aria-label", "Close");
+                removeButton.innerHTML =
+                    `<span aria-hidden="true">&times;</span>`;
+                removeButton.addEventListener('click', (el) => deleteRow(el.target.parentNode.parentNode.parentNode));
+
                 titleRow.appendChild(titleInput);
                 urlRow.appendChild(urlInput);
                 imageUrlRow.appendChild(imageUrlInput);
                 imagePreviewRow.appendChild(imageImg);
                 updateImageRow.appendChild(updateImageButton);
+                removeRow.appendChild(removeButton);
+            }
+
+            const deleteRow = (row) => {
+                const rowIndex = row.rowIndex;
+                document.getElementById("items").deleteRow(rowIndex - 1);
             }
 
             const updateImageWithButton = (button) => {
@@ -204,6 +246,7 @@ html(lang='en')
                             th URL
                             th Image URL
                             th Image preview
+                            th
                             th
                     tbody#items
                 table.table.table-responsive.table-borderless
