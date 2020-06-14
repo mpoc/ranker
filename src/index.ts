@@ -33,7 +33,7 @@ app.get("/vote/:gameId", vote);
 app.get("/ratings/:gameId", viewRatings);
 
 // Create game from urls
-app.get("/autocreate", autoCreateGame);
+app.get("/", autoCreateGame);
 
 // Create game
 app.get("/create", createGame);

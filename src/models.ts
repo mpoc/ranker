@@ -1,14 +1,21 @@
 import Joi from "@hapi/joi";
 import { IRating } from "./models/item.model";
 
+export const itemToAddSchema = Joi.object({
+    title: Joi.string().required(),
+    url: Joi.string().uri().required(),
+    imageUrl: Joi.string().uri().required()
+});
+
+export type ItemToAdd = {
+    title: string,
+    url: string,
+    imageUrl: string
+};
+
 export const addGameRequestSchema = Joi.object({
     title: Joi.string().required(),
-    items: Joi.array().items(
-        Joi.object({
-            title: Joi.string().required(),
-            url: Joi.string().uri().required()
-        })
-    )
+    items: Joi.array().items(itemToAddSchema)
 });
 
 export type AddGameRequest = {
@@ -46,12 +53,7 @@ export type GetNewMatchRequest = {
 
 export const addItemsRequestSchema = Joi.object({
     gameId: Joi.string().required(),
-    items: Joi.array().items(
-        Joi.object({
-            title: Joi.string().required(),
-            url: Joi.string().uri().required()
-        }
-    )).min(1).required()
+    items: Joi.array().items(itemToAddSchema).min(1).required()
 });
 
 export type AddItemsRequest = {
@@ -70,8 +72,3 @@ export type AutoAddGameRequest = {
     title: string,
     itemUrls: string[]
 };
-
-export type ItemToAdd = {
-    title: string,
-    url: string
-}

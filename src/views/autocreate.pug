@@ -22,7 +22,7 @@ html(lang='en')
                 let row = table.insertRow();
                 let url = row.insertCell(0);
                 let input = document.createElement('input'); 
-                input.type = "text";
+                input.type = "url";
                 input.classList.add("itemUrl");
                 input.classList.add("form-control");
                 url.appendChild(input);
@@ -90,11 +90,11 @@ html(lang='en')
                         tr
                             td
                                 input.form-control#gameTitle(type="text")
-                table#itemUrls.table.table-responsive.table-borderless
+                table.table.table-responsive.table-borderless
                     thead.thead-dark
                         tr
-                            th Url
-                    tbody
+                            th URL
+                    tbody#itemUrls
                 table.table.table-responsive.table-borderless
                     tbody
                         tr

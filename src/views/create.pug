@@ -19,43 +19,90 @@ html(lang='en')
                 document
                     .getElementById("addItemButton")
                     .addEventListener('click', () => addItemRow());
-                //- document
-                //-     .getElementById("submitButton")
-                //-     .addEventListener('click', () => submit(getTitle(), getItemUrls()));
+                document
+                    .getElementById("submitButton")
+                    .addEventListener('click', () => submit(getTitle(), getItems()));
                 document
                     .getElementById("updateAllImages")
                     .addEventListener('click', () => updateAllImages());
             }
 
-            //- const submit = (title, itemUrls) => {
-            //-     const json = {
-            //-         "title": title,
-            //-         "itemUrls": itemUrls
-            //-     };
+            const getTitle = () => {
+                return document.getElementById('gameTitle').value;
+            }
 
-            //-     console.log(json);
+            const getItems = () => {
+                return Array.prototype.map.call(
+                    document.getElementsByClassName('item'),
+                    el => ({
+                        title: el.getElementsByTagName('input')[0].value,
+                        url: el.getElementsByTagName('input')[1].value,
+                        imageUrl: el.getElementsByTagName('input')[2].value
+                    })
+                )
+            }
 
-            //-     const options = {
-            //-         method: 'POST',
-            //-         body: JSON.stringify(json),
-            //-         headers: {
-            //-             'Content-Type': 'application/json'
-            //-         }
-            //-     }
+            const submit = (title, items) => {
+                const json = {
+                    "title": title,
+                    "items": items
+                };
 
-            //-     fetch('/api/games/auto', options)
-            //-         .then(res => res.json())
-            //-         .then(data => { if (data.success) window.location.href = "/create?data=" + JSON.stringify(data.data) })
-            //-         .catch(err => console.error(err));
-            //- }
+                const options = {
+                    method: 'POST',
+                    body: JSON.stringify(json),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+
+                fetch('/api/games', options)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.getElementById('updateAllImages').disabled = true;
+                            document.getElementById('addItemButton').disabled = true;
+                            document.getElementById('submitButton').disabled = true;
+
+                            let table = document.getElementById('buttons');
+
+                            let row1 = table.insertRow();
+                            let voteButtonCell = row1.insertCell(0);
+                            let voteButton = document.createElement('button'); 
+                            voteButton.type = "button";
+                            voteButton.classList.add("btn");
+                            voteButton.classList.add("btn-primary");
+                            voteButton.innerHTML = "Vote";
+                            voteButton.addEventListener('click',
+                                el => window.open(window.location.origin + "/vote/" + data.data._id, '_blank'));
+                            voteButtonCell.appendChild(voteButton);
+
+                            let row2 = table.insertRow();
+                            let ratingsCell = row2.insertCell(0);
+                            let ratingsButton = document.createElement('button'); 
+                            ratingsButton.type = "button";
+                            ratingsButton.classList.add("btn");
+                            ratingsButton.classList.add("btn-primary");
+                            ratingsButton.innerHTML = "Ratings";
+                            ratingsButton.addEventListener('click',
+                                el => window.open(window.location.origin + "/ratings/" + data.data._id, '_blank'));
+                            ratingsCell.appendChild(ratingsButton);
+                        }
+                    })
+                    .catch(err => console.error(err));
+            }
 
             const fillSentItems = () => {
                 const urlParams = new URLSearchParams(window.location.search);
-                let sentItems = JSON.parse(urlParams.get('data'));
-                if (sentItems) {
-                    document.getElementById('gameTitle').value = sentItems.title;
-                    Array.prototype.forEach.call(sentItems.items, item => addItemRow(item.title, item.url, item.image));
-                } else {
+                try {
+                    const sentItems = JSON.parse(urlParams.get('data'));
+                    if (sentItems && sentItems.items && sentItems.items.length) {
+                        document.getElementById('gameTitle').value = sentItems.title;
+                        Array.prototype.forEach.call(sentItems.items, item => addItemRow(item.title, item.url, item.imageUrl));
+                    } else {
+                        addItemRow();
+                    }
+                } catch (e) {
                     addItemRow();
                 }
             }
@@ -63,6 +110,7 @@ html(lang='en')
             const addItemRow = (title, url, imageUrl) => {
                 const table = document.getElementById("items");
                 let row = table.insertRow();
+                row.classList.add("item");
 
                 let titleRow = row.insertCell(0);
                 let urlRow = row.insertCell(1);
@@ -79,7 +127,7 @@ html(lang='en')
                 }
 
                 let urlInput = document.createElement('input'); 
-                urlInput.type = "text";
+                urlInput.type = "url";
                 urlInput.id = "url";
                 urlInput.classList.add("form-control");
                 if (url) {
@@ -87,7 +135,7 @@ html(lang='en')
                 }
 
                 let imageUrlInput = document.createElement('input'); 
-                imageUrlInput.type = "text";
+                imageUrlInput.type = "url";
                 imageUrlInput.id = "imageUrl";
                 imageUrlInput.classList.add("form-control");
                 if (imageUrl) {
@@ -159,15 +207,13 @@ html(lang='en')
                             th
                     tbody#items
                 table.table.table-responsive.table-borderless
-                    tbody
+                    tbody#buttons
                         tr
                             td
                                 button#updateAllImages.btn.btn-primary(type="button") Update all images
-                    tbody
                         tr
                             td
                                 button#addItemButton.btn.btn-primary(type="button") Add item
-                    tbody
                         tr
                             td
                                 button#submitButton.btn.btn-success(type="button") Submit

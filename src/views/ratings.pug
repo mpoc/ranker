@@ -42,12 +42,16 @@ html(lang='en')
                     let elo = row.insertCell(2);
                     let image = row.insertCell(3);
 
-                    let img = document.createElement('img'); 
-                    img.src = item.url;
+                    let img = document.createElement('img');
+                    img.src = item.imageUrl;
                     img.loading = "lazy";
 
+                    let a = document.createElement('a');
+                    a.href = item.url;
+                    a.innerHTML = item.title;
+
                     rank.innerHTML = lowestRank++;
-                    title.innerHTML = item.title;
+                    title.appendChild(a);
                     elo.innerHTML = item.rating.rating + "<br>" + item.rating.ratingDeviation;
                     image.appendChild(img);
                 });

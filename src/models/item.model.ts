@@ -60,6 +60,7 @@ const Glicko2RatingSchema = new mongoose.Schema({
 export interface IItem extends mongoose.Document {
     title: string,
     url: string,
+    imageUrl: string,
     matchCount: number,
     rating: any
 };
@@ -70,6 +71,10 @@ export const ItemSchema = new mongoose.Schema({
         required: true
     },
     url: {
+        type: String,
+        required: true
+    },
+    imageUrl: {
         type: String,
         required: true
     },

@@ -79,7 +79,7 @@ export const autoAddGame = async (req, res, next) => {
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
 
         // Temporary "rate limiting"
-        if (value.itemUrls.length > 7) throw new ErrorHandler(BAD_REQUEST, "Too many items to retrieve data for");
+        if (value.itemUrls.length > 10) throw new ErrorHandler(BAD_REQUEST, "Too many items to retrieve data for");
 
         const urlsHtml = await Promise.all(
             value.itemUrls.map(async url => ({
@@ -94,18 +94,29 @@ export const autoAddGame = async (req, res, next) => {
             metascraperUrl(),
         ]);
 
-        const metadataArray: ItemToAdd[] = await Promise.all(
+        const metadataArray: {
+            title: string,
+            url: string,
+            image: string
+        }[] = await Promise.all(
             urlsHtml.map(
                 async ({ url, response }) =>
                 await scraper({ html: response.data, url: url })
             )
         );
+
+        const formattedMetadataArray: ItemToAdd[] =
+            metadataArray.map(item => ({
+                title: item.title,
+                url: item.url,
+                imageUrl: item.image
+            }));
     
         respond({
             success: true,
             message: "Auto game data retrieved successfully",
             data: {
-                items: metadataArray
+                items: formattedMetadataArray
             }
         }, OK, res);
     } catch (error) {
@@ -267,7 +278,6 @@ export const getNewMatch = async (req, res, next) => {
         // Pick two items at random OR
         // Pick one random item from the bottom 30% of rating deviation and one random item
         const random = Math.random();
-        console.log(random);
         if (random < 0.5) {
             // Get just two random items
             let items = game.items;
