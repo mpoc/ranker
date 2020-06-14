@@ -15,6 +15,8 @@ html(lang='en')
                         .addEventListener('click', () => addUrlRow());
                 document.getElementById("submitButton")
                         .addEventListener('click', () => submit(getTitle(), getItemUrls()));
+                document.getElementById('manualGame')
+                        .addEventListener('click', () => window.location.href = window.location.origin + "/create");
             }
 
             const addUrlRow = () => {
@@ -144,7 +146,9 @@ html(lang='en')
                         tr
                             td
                                 button#addItemButton.btn.btn-primary(type="button") Add item                                
-                    tbody
                         tr
                             td
                                 button#submitButton.btn.btn-success(type="button") Submit
+                        tr
+                            td
+                                button#manualGame.btn.btn-primary(type="button") Manually create game
