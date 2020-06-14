@@ -335,5 +335,13 @@ export const vote = async (req, res, next) => {
 }
 
 export const viewRatings = async (req, res, next) => {
-  res.render("ratings.pug");
+    res.render("ratings.pug");
+};
+
+export const autoCreateGame = async (req, res, next) => {
+    res.render("autocreate.pug");
+};
+
+export const createGame = async (req, res, next) => {
+    res.render("create.pug");
 };

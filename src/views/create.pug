@@ -1,0 +1,174 @@
+html(lang='en')
+    head
+        title Create game
+        meta(charset="utf-8")
+        meta(name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no")
+        link(
+            rel="stylesheet"
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+            integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk"
+            crossorigin="anonymous"
+        )
+        style(type='text/css').
+            img.preview {
+                max-width: 400px;
+                max-height: 250px;
+            }
+        script.
+            const activateButtons = () => {
+                document
+                    .getElementById("addItemButton")
+                    .addEventListener('click', () => addItemRow());
+                //- document
+                //-     .getElementById("submitButton")
+                //-     .addEventListener('click', () => submit(getTitle(), getItemUrls()));
+                document
+                    .getElementById("updateAllImages")
+                    .addEventListener('click', () => updateAllImages());
+            }
+
+            //- const submit = (title, itemUrls) => {
+            //-     const json = {
+            //-         "title": title,
+            //-         "itemUrls": itemUrls
+            //-     };
+
+            //-     console.log(json);
+
+            //-     const options = {
+            //-         method: 'POST',
+            //-         body: JSON.stringify(json),
+            //-         headers: {
+            //-             'Content-Type': 'application/json'
+            //-         }
+            //-     }
+
+            //-     fetch('/api/games/auto', options)
+            //-         .then(res => res.json())
+            //-         .then(data => { if (data.success) window.location.href = "/create?data=" + JSON.stringify(data.data) })
+            //-         .catch(err => console.error(err));
+            //- }
+
+            const fillSentItems = () => {
+                const urlParams = new URLSearchParams(window.location.search);
+                let sentItems = JSON.parse(urlParams.get('data'));
+                if (sentItems) {
+                    document.getElementById('gameTitle').value = sentItems.title;
+                    Array.prototype.forEach.call(sentItems.items, item => addItemRow(item.title, item.url, item.image));
+                } else {
+                    addItemRow();
+                }
+            }
+
+            const addItemRow = (title, url, imageUrl) => {
+                const table = document.getElementById("items");
+                let row = table.insertRow();
+
+                let titleRow = row.insertCell(0);
+                let urlRow = row.insertCell(1);
+                let imageUrlRow = row.insertCell(2);
+                let imagePreviewRow = row.insertCell(3);
+                let updateImageRow = row.insertCell(4);
+
+                let titleInput = document.createElement('input'); 
+                titleInput.type = "text";
+                titleInput.id = "title";
+                titleInput.classList.add("form-control");
+                if (title) {
+                    titleInput.value = title;
+                }
+
+                let urlInput = document.createElement('input'); 
+                urlInput.type = "text";
+                urlInput.id = "url";
+                urlInput.classList.add("form-control");
+                if (url) {
+                    urlInput.value = url;
+                }
+
+                let imageUrlInput = document.createElement('input'); 
+                imageUrlInput.type = "text";
+                imageUrlInput.id = "imageUrl";
+                imageUrlInput.classList.add("form-control");
+                if (imageUrl) {
+                    imageUrlInput.value = imageUrl;
+                }
+
+                let imageImg = document.createElement('img'); 
+                imageImg.id = "imagePreview";
+                imageImg.classList.add("preview");
+                if (imageUrl) {
+                    imageImg.src = imageUrl;
+                }
+
+                let updateImageButton = document.createElement('button'); 
+                updateImageButton.type = "button";
+                updateImageButton.id = "imageUrl";
+                updateImageButton.classList.add("btn");
+                updateImageButton.classList.add("btn-primary");
+                updateImageButton.innerHTML = "Update image";
+                updateImageButton.addEventListener('click', (el) => updateImageWithButton(el.target));
+
+                titleRow.appendChild(titleInput);
+                urlRow.appendChild(urlInput);
+                imageUrlRow.appendChild(imageUrlInput);
+                imagePreviewRow.appendChild(imageImg);
+                updateImageRow.appendChild(updateImageButton);
+            }
+
+            const updateImageWithButton = (button) => {
+                const row = button
+                    .parentElement  // td
+                    .parentElement; // tr
+
+                //- row.getElementById('imagePreview').src = row.getElementById('imageUrl').value;
+                // Ugly and temporary solution because Elements have no getElementById method
+                row.getElementsByTagName('img')[0].src = row.getElementsByTagName('input')[2].value;
+            }
+
+            const updateAllImages = () => {
+                console.log(document.getElementById('items').getElementsByTagName('tr'));
+                Array.prototype.forEach.call(
+                    document.getElementById('items').getElementsByTagName('tr'),
+                    row => row.getElementsByTagName('img')[0].src = row.getElementsByTagName('input')[2].value
+                );
+            }
+
+            window.onload = () => {
+                activateButtons();
+                fillSentItems();
+            }
+    body
+        div.row.justify-content-center.container-fluid
+            div.col-auto
+                table.table.table-responsive.table-borderless
+                    thead.thead-dark
+                        tr
+                            th Game Name
+                    tbody
+                        tr
+                            td
+                                input.form-control#gameTitle(type="text")
+                table.table.table-responsive.table-borderless
+                    thead.thead-dark
+                        tr
+                            th Title
+                            th URL
+                            th Image URL
+                            th Image preview
+                            th
+                    tbody#items
+                table.table.table-responsive.table-borderless
+                    tbody
+                        tr
+                            td
+                                button#updateAllImages.btn.btn-primary(type="button") Update all images
+                    tbody
+                        tr
+                            td
+                                button#addItemButton.btn.btn-primary(type="button") Add item
+                    tbody
+                        tr
+                            td
+                                button#submitButton.btn.btn-success(type="button") Submit
+

@@ -1,0 +1,107 @@
+html(lang='en')
+    head
+        title Create game
+        meta(charset="utf-8")
+        meta(name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no")
+        link(
+            rel="stylesheet"
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+            integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk"
+            crossorigin="anonymous"
+        )
+        script.
+            const activateButtons = () => {
+                document.getElementById("addItemButton")
+                        .addEventListener('click', () => addUrlRow());
+                document.getElementById("submitButton")
+                        .addEventListener('click', () => submit(getTitle(), getItemUrls()));
+            }
+
+            const addUrlRow = () => {
+                const table = document.getElementById("itemUrls");
+                let row = table.insertRow();
+                let url = row.insertCell(0);
+                let input = document.createElement('input'); 
+                input.type = "text";
+                input.classList.add("itemUrl");
+                input.classList.add("form-control");
+                url.appendChild(input);
+            }
+
+            const submit = (title, itemUrls) => {
+                const json = {
+                    "title": title,
+                    "itemUrls": itemUrls
+                };
+
+                const options = {
+                    method: 'POST',
+                    body: JSON.stringify(json),
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                };
+
+                fetch('/api/games/auto', options)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            const objectToSend = {
+                                title: json.title,
+                                items: data.data.items
+                            };
+
+                            const params = {
+                                data: JSON.stringify(objectToSend)
+                            }
+
+                            const url = new URL(window.location.origin + "/create");
+                            url.search = new URLSearchParams(params).toString();
+
+                            window.location.href = url.toString();
+                        }
+                    })
+                    .catch(err => console.error(err));
+            }
+
+            const getTitle = () => {
+                return document.getElementById('gameTitle').value;
+            }
+
+            const getItemUrls = () => {
+                return Array.prototype.map.call(
+                    document.getElementsByClassName('itemUrl'),
+                    el => el.value
+                )
+            }
+
+            window.onload = () => {
+                activateButtons();
+                addUrlRow();
+            }
+    body
+        div.row.justify-content-center.container-fluid
+            div.col-auto
+                table.table.table-responsive.table-borderless
+                    thead.thead-dark
+                        tr
+                            th Game Name
+                    tbody
+                        tr
+                            td
+                                input.form-control#gameTitle(type="text")
+                table#itemUrls.table.table-responsive.table-borderless
+                    thead.thead-dark
+                        tr
+                            th Url
+                    tbody
+                table.table.table-responsive.table-borderless
+                    tbody
+                        tr
+                            td
+                                button#addItemButton.btn.btn-primary(type="button") Add item                                
+                    tbody
+                        tr
+                            td
+                                button#submitButton.btn.btn-success(type="button") Submit
+

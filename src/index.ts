@@ -8,7 +8,9 @@ import {
     getNewMatch,
     addItems,
     vote,
-    viewRatings
+    viewRatings,
+    autoCreateGame,
+    createGame
 } from "./controller";
 import { handleError, ErrorHandler } from "./error";
 import { logger, httpLogger } from "./utils";
@@ -30,11 +32,17 @@ app.get("/vote/:gameId", vote);
 // View ratings
 app.get("/ratings/:gameId", viewRatings);
 
+// Create game from urls
+app.get("/autocreate", autoCreateGame);
+
+// Create game
+app.get("/create", createGame);
+
 // Add a game with items
 app.post("/api/games", addGame);
 
-// Add an item to a game
-app.get("/api/games/auto", autoAddGame);
+// Retrieve data about urls for game creation
+app.post("/api/games/auto", autoAddGame);
 
 // Get items for a game sorted by elo
 app.get("/api/games", getGame);
