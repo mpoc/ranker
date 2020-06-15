@@ -25,6 +25,7 @@ app.set("view engine", "pug");
 app.set("views", __dirname + "/views");
 
 const PORT = "8000";
+const MONGO_CONNECTION_STRING = process.env.MONGO_CONNECTION_STRING || "mongodb://192.168.99.100:27017/ranker";
 
 // Vote
 app.get("/vote/:gameId", vote);
@@ -70,7 +71,7 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, async (err: Error) => {
     if (err) return logger.error(err);
-    mongoose.connect("mongodb://192.168.99.100:27017/ranker", { useNewUrlParser: true, useUnifiedTopology: true });
+    mongoose.connect(MONGO_CONNECTION_STRING, { useNewUrlParser: true, useUnifiedTopology: true });
     logger.info(`Server is listening on port ${PORT}`);
     logger.info("Connected to MongoDB");
 });
