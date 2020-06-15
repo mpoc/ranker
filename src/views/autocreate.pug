@@ -14,23 +14,42 @@ html(lang='en')
             const activateButtons = () => {
                 document.getElementById("addItemButton")
                         .addEventListener('click', () => addUrlRow());
+                document.getElementById("bulkEditButton")
+                        .addEventListener('click', () => bulkEditUrls());
+                document.getElementById("saveBulkButton")
+                        .addEventListener('click', () => saveBulkEdit());
                 document.getElementById("clearItemUrls")
-                        .addEventListener('click', () => clearItemUrlTable());
+                        .addEventListener('click', () => {
+                            clearItemUrlTable();
+                            addUrlRow();
+                        });
                 document.getElementById("submitButton")
                         .addEventListener('click', () => submit(getTitle(), getItemUrls()));
                 document.getElementById('manualGame')
                         .addEventListener('click', () => window.location.href = window.location.origin + "/create");
             }
 
-            const addUrlRow = () => {
+            const saveBulkEdit = () => {
+                clearItemUrlTable();
+                document.getElementById('bulkEditUrls').value.split("\n").forEach(url => addUrlRow(url));
+            }
+
+            const bulkEditUrls = () => {
+                document.getElementById('bulkEditUrls').value = getItemUrls().join("\n");
+            }
+
+            const addUrlRow = (url) => {
                 const table = document.getElementById("itemUrls");
                 let row = table.insertRow();
 
-                let url = row.insertCell(0);
+                let urlCell = row.insertCell(0);
                 let input = document.createElement('input');
                 input.type = "url";
                 input.classList.add("itemUrl", "form-control");
-                url.appendChild(input);
+                if (url) {
+                    input.value = url;
+                }
+                urlCell.appendChild(input);
 
                 let removeRow = row.insertCell(1);
                 let removeButton = document.createElement('button');
@@ -114,7 +133,6 @@ html(lang='en')
                 const newTbody = document.createElement('tbody');
                 oldTbody.parentNode.replaceChild(newTbody, oldTbody);
                 newTbody.id = "itemUrls";
-                addUrlRow();
             }
 
             const getTitle = () => {
@@ -133,6 +151,21 @@ html(lang='en')
                 addUrlRow();
             }
     body
+        script(
+            src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+            integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+            crossorigin="anonymous"
+        )
+        script(
+            src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+            integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+            crossorigin="anonymous"
+        )
+        script(
+            src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+            integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+            crossorigin="anonymous"
+        )
         div.row.justify-content-center.container-fluid
             div.col-auto
                 table.table.table-responsive.table-borderless
@@ -153,7 +186,23 @@ html(lang='en')
                     tbody
                         tr
                             td
-                                button#addItemButton.btn.btn-primary(type="button") Add item                                
+                                button#addItemButton.btn.btn-primary(type="button") Add item
+                            td
+                                button#bulkEditButton.btn.btn-primary(type="button" data-toggle="modal" data-target="#bulkEditModal") Bulk add items
+                                div.modal.fade#bulkEditModal(tabindex="-1" role="dialog" aria-labelledby="bulkEditModalLabel" aria-hidden="true")
+                                    div.modal-dialog.modal-lg(role="document")
+                                        div.modal-content
+                                            div.modal-header
+                                              h5.modal-title#bulkEditModalLabel Bulk edit
+                                              button.close(type="button" data-dismiss="modal" aria-label="Close")
+                                                span(aria-hidden="true") &times;
+                                            div.modal-body
+                                                div.form-group
+                                                    label.col-form-label(for="message-text") Enter your URLs, one URL per line:
+                                                    textarea#bulkEditUrls.form-control
+                                            div.modal-footer
+                                                button.btn.btn-secondary(type="button" data-dismiss="modal") Close
+                                                button#saveBulkButton.btn.btn-primary(type="button" data-dismiss="modal") Save changes
                             td
                                 button#clearItemUrls.btn.btn-primary(type="button") Clear all URLs
                             td
