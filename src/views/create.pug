@@ -223,11 +223,17 @@ html(lang='en')
                 );
             }
 
+            const clearUrlParams = () => {
+                const clearedUrl = window.location.origin + window.location.pathname;
+                window.history.pushState({}, null, clearedUrl)
+            }
+
             const clearItemTable = () => {
                 const oldTbody = document.getElementById('items');
                 const newTbody = document.createElement('tbody');
                 oldTbody.parentNode.replaceChild(newTbody, oldTbody);
                 newTbody.id = "items";
+                clearUrlParams();
                 addItemRow();
             }
 
