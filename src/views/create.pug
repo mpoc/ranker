@@ -1,7 +1,7 @@
 doctype html
 html(lang='en')
     head
-        title Create game
+        title Manually create game
         meta(charset="utf-8")
         meta(name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no")
         link(
@@ -20,6 +20,9 @@ html(lang='en')
                 document
                     .getElementById("addItemButton")
                     .addEventListener('click', () => addItemRow());
+                document
+                    .getElementById("clearItems")
+                    .addEventListener('click', () => clearItemTable());
                 document
                     .getElementById("submitButton")
                     .addEventListener('click', () => submit(getTitle(), getItems()));
@@ -49,8 +52,7 @@ html(lang='en')
                     button.disabled = true;
 
                     let span = document.createElement('span');
-                    span.classList.add("spinner-border");
-                    span.classList.add("spinner-border-sm");
+                    span.classList.add("spinner-border", "spinner-border-sm");
                     span.setAttribute("role", "status");
                     span.setAttribute("aria-hidden", "true");
 
@@ -94,8 +96,7 @@ html(lang='en')
                             let voteButtonCell = row1.insertCell(0);
                             let voteButton = document.createElement('button'); 
                             voteButton.type = "button";
-                            voteButton.classList.add("btn");
-                            voteButton.classList.add("btn-primary");
+                            voteButton.classList.add("btn", "btn-primary");
                             voteButton.innerHTML = "Vote";
                             voteButton.addEventListener('click',
                                 el => window.open(window.location.origin + "/vote/" + data.data._id, '_blank'));
@@ -105,8 +106,7 @@ html(lang='en')
                             let ratingsCell = row2.insertCell(0);
                             let ratingsButton = document.createElement('button'); 
                             ratingsButton.type = "button";
-                            ratingsButton.classList.add("btn");
-                            ratingsButton.classList.add("btn-primary");
+                            ratingsButton.classList.add("btn", "btn-primary");
                             ratingsButton.innerHTML = "Ratings";
                             ratingsButton.addEventListener('click',
                                 el => window.open(window.location.origin + "/ratings/" + data.data._id, '_blank'));
@@ -180,15 +180,13 @@ html(lang='en')
                 let updateImageButton = document.createElement('button'); 
                 updateImageButton.type = "button";
                 updateImageButton.id = "imageUrl";
-                updateImageButton.classList.add("btn");
-                updateImageButton.classList.add("btn-primary");
+                updateImageButton.classList.add("btn", "btn-primary");
                 updateImageButton.innerHTML = "Update image";
                 updateImageButton.addEventListener('click', (el) => updateImageWithButton(el.target));
 
                 let removeButton = document.createElement('button');
-                removeButton.setAttribute("type", "button");
-                removeButton.classList.add("close");
-                removeButton.classList.add("text-danger");
+                removeButton.type = "button";
+                removeButton.classList.add("close", "text-danger");
                 removeButton.setAttribute("aria-label", "Close");
                 removeButton.innerHTML =
                     `<span aria-hidden="true">&times;</span>`;
@@ -225,6 +223,14 @@ html(lang='en')
                 );
             }
 
+            const clearItemTable = () => {
+                const oldTbody = document.getElementById('items');
+                const newTbody = document.createElement('tbody');
+                oldTbody.parentNode.replaceChild(newTbody, oldTbody);
+                newTbody.id = "items";
+                addItemRow();
+            }
+
             window.onload = () => {
                 activateButtons();
                 fillSentItems();
@@ -255,10 +261,10 @@ html(lang='en')
                         tr
                             td
                                 button#updateAllImages.btn.btn-primary(type="button") Update all images
-                        tr
                             td
                                 button#addItemButton.btn.btn-primary(type="button") Add item
-                        tr
+                            td
+                                button#clearItems.btn.btn-primary(type="button") Clear all items
                             td
                                 button#submitButton.btn.btn-success(type="button") Submit
 
