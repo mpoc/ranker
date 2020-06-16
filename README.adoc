@@ -1,0 +1,18 @@
+= Ranker
+
+== Run instructions
+
+=== Docker
+
+----
+curl -O "https://raw.githubusercontent.com/mpoc/ranker/master/docker-compose.yml"
+docker-compose up -d
+----
+
+=== Locally
+
+----
+git clone https://github.com/mpoc/ranker
+yarn install --production
+yarn prod
+----
