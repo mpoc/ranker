@@ -63,7 +63,7 @@ app.use((err, req, res, next) => {
     // error and send Unknown error as a response
     if (!(err instanceof ErrorHandler)) {
         logger.error(err);
-        handleError(new ErrorHandler(INTERNAL_SERVER_ERROR, "Unknown error"), res)
+        handleError(new ErrorHandler(INTERNAL_SERVER_ERROR, "Unknown error"), res);
     } else {
         handleError(err, res);
     }
