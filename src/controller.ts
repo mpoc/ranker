@@ -42,7 +42,7 @@ import {
 } from "./models/item.model";
 import { ErrorHandler } from "./error";
 import { EloPlayer, EloMatch } from "./ratings/elo";
-import { respond, shuffle, getRandomInt, getRandomItem, logger } from "./utils";
+import { respond, shuffle, getRandomInt, getRandomItem, logger, shiftValueToRange, limitValue } from "./utils";
 
 export const addGame = async (req, res, next) => {
     try {
@@ -222,6 +222,9 @@ export const playMatch = async (req, res, next) => {
         game.itemPlaceChanges.push(calculateNumberOfDifferences(itemsBeforeVote, itemsAfterVote));
 
         const accuracy = calculateAccuracy(game.items.length, game.itemPlaceChanges);
+
+        // const altAccuracy = average(game.items.map(item => item.rating.ratingDeviation));
+        // const limitedAccuracy = limitValue(shiftValueToRange(-altAccuracy, -350, -200, 0, 1), 0, 1);
         
         game.markModified('items');
         game.markModified("itemPlaceChanges");
@@ -234,7 +237,7 @@ export const playMatch = async (req, res, next) => {
             message: "Items updated successfully",
             data: {
                 accuracy,
-                updatedItems: items
+                items
             }
         }, OK, res);
     } catch (error) {
@@ -249,7 +252,7 @@ const calculateNumberOfDifferences = (array1: any[], array2: any[]) => {
 
 // Calculates the average from a number array
 const average = (array: number[]) => {
-    return array.reduce((a, b) => a + b, 0) / array.length;
+    return (array.reduce((a, b) => a + b, 0) / array.length) || 0;
 }
 
 // Calculates the rolling average for the last n elements of array
@@ -266,6 +269,8 @@ const calculateNForRunningAvg = (length: number) => {
 }
 
 const calculateAccuracy = (totalNumberOfItems: number, changeArray: number[]) => {
+    if (changeArray.length < 1) return 0;
+
     const N = calculateNForRunningAvg(totalNumberOfItems);
     const rollingAverage = calculateRollingAverage(changeArray, N);
     const avgChangesProportion = rollingAverage / totalNumberOfItems;
@@ -324,10 +329,16 @@ export const getNewMatch = async (req, res, next) => {
             shuffle(itemsForGame);
         }
 
+        const accuracy = calculateAccuracy(game.items.length, game.itemPlaceChanges);
+
         respond({
             success: true,
             message: "Items found",
-            data: itemsForGame
+            data: {
+                accuracy,
+                items: itemsForGame
+            }
+            
         }, OK, res);
     } catch (error) {
         next(error);
