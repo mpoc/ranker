@@ -73,11 +73,10 @@ app.listen(PORT, async (err: Error) => {
     if (err) return logger.error(err);
 
     await mongoose.connect(MONGO_CONNECTION_STRING, { useNewUrlParser: true, useUnifiedTopology: true })
-      .catch((error) => logger.error(error));
-    mongoose.connection.on("error", (error) => logger.error(error));
-    mongoose.connection.once("open", () => {
-        logger.info("Connected to MongoDB");
-    });
-    
+        .catch((error) => logger.error(error));
+      
     logger.info(`Server is listening on port ${PORT}`);
 });
+    
+mongoose.connection.on("error", (error) => logger.error(error));
+mongoose.connection.once("connected", () => logger.info("Connected to MongoDB"));
