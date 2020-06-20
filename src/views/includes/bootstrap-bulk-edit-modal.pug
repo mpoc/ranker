@@ -8,7 +8,7 @@ div.modal.fade#bulkEditModal(tabindex="-1" role="dialog" aria-labelledby="bulkEd
             div.modal-body
                 div.form-group
                     label.col-form-label(for="message-text") Enter your URLs, one URL per line:
-                    textarea#bulkEditUrls.form-control
+                    textarea#bulkEditUrls.form-control(rows="10")
             div.modal-footer
                 button.btn.btn-secondary(type="button" data-dismiss="modal") Close
                 button#saveBulkButton.btn.btn-primary(type="button" data-dismiss="modal") Save changes
