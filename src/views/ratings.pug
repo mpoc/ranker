@@ -1,82 +1,14 @@
 doctype html
 html(lang='en')
     head
-        title Ratings
-        meta(charset="utf-8")
-        meta(name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no")
-        link(
-            rel="stylesheet"
-            href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-            integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk"
-            crossorigin="anonymous"
-        )
+        include includes/bootstrap-css.pug
         style(type='text/css').
             img {
                 max-width: 450px;
                 max-height: 450px;
             }
-        script.
-            const fetchGame = () => {
-                const path = window.location.pathname.split('/'); 
-                const gameId = path[path.length - 1];
-
-                const options = {
-                    method: 'GET',
-                    redirect: 'follow'
-                };
-
-                fetch('/api/games?id=' + gameId, options)
-                    .then(res => res.json())
-                    .then(data => { if (data.success) populateTable(data.data.items) })
-                    .catch(err => console.error(err));
-            }
-
-            let lowestRank = 1;
-
-            const populateTable = (items) => {
-                const table = document.getElementById("items");
-                items.forEach(item => {
-                    let row = table.insertRow();
-
-                    let rank = row.insertCell(0);
-                    let title = row.insertCell(1);
-                    let elo = row.insertCell(2);
-                    let image = row.insertCell(3);
-
-                    let img = document.createElement('img');
-                    img.src = item.imageUrl;
-                    img.loading = "lazy";
-
-                    let a = document.createElement('a');
-                    a.href = item.url;
-                    a.innerHTML = item.title;
-
-                    rank.innerHTML = lowestRank++;
-                    title.appendChild(a);
-                    //- elo.innerHTML = item.rating.rating + "<br>" + item.rating.ratingDeviation;
-                    elo.innerHTML = item.rating.rating;
-                    image.appendChild(img);
-                });
-            }
-
-            window.onload = () => {
-                fetchGame();
-            }
-        script(
-            src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
-            integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
-            crossorigin="anonymous"
-        )
-        script(
-            src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
-            integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
-            crossorigin="anonymous"
-        )
-        script(
-            src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"
-            integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
-            crossorigin="anonymous"
-        )
+        title Ratings
+        script(src="/js/ratings.js")
     body
         div.row.justify-content-center
             div.col-auto
@@ -88,3 +20,4 @@ html(lang='en')
                             th Rating
                             th Image
                     tbody#items
+    include includes/bootstrap-js.pug

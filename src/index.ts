@@ -27,6 +27,8 @@ app.set("views", __dirname + "/views");
 const PORT = "8000";
 const MONGO_CONNECTION_STRING = process.env.MONGO_CONNECTION_STRING || "mongodb://192.168.99.100:27017/ranker";
 
+// Frontend
+
 // Vote
 app.get("/vote/:gameId", vote);
 
@@ -38,6 +40,11 @@ app.get("/", autoCreateGame);
 
 // Create game
 app.get("/create", createGame);
+
+// Javascript
+app.use('/js', express.static(__dirname + '/views/js'));
+
+// Backend
 
 // Add a game with items
 app.post("/api/games", addGame);

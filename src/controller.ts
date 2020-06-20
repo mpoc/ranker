@@ -299,6 +299,9 @@ const calculateAccuracy = (game: IGame) => {
         const accuracy = calculateLastVoteAccuracy(game.items.length, game.itemPlaceChanges);
         return accuracy;
     }
+    // Another way to calculate accuracy is to calculate RD ranges and calculate
+    // the number of overlaps. The lower the number - the higher the accuracy.
+    // https://stackoverflow.com/questions/7468948/problem-calculating-overlapping-date-ranges
 }
 
 const convertRDtoAccuracy = (ratingDeviation: number) => {
@@ -352,7 +355,7 @@ const getItemsForNewMatch = (game: IGame) => {
 
         // Copying the array just in case
         const items = shuffle([...game.items]);
-        
+
         const itemsForGame = [items[0], items[1]];
         return itemsForGame;
     } else {
