@@ -25,28 +25,36 @@ const bulkEditUrls = () => {
     document.getElementById('bulkEditUrls').value = getItemUrls().join("\n");
 }
 
-const addUrlRow = (url) => {
-    const table = document.getElementById("itemUrls");
-    let row = table.insertRow();
-
-    let urlCell = row.insertCell(0);
-    let input = document.createElement('input');
-    input.type = "url";
-    input.classList.add("itemUrl", "form-control");
-    if (url) {
-        input.value = url;
-    }
-    urlCell.appendChild(input);
-
-    let removeRow = row.insertCell(1);
-    let removeButton = document.createElement('button');
+const createRemoveButton = () => {
+    const removeButton = document.createElement('button');
     removeButton.type = "button";
     removeButton.classList.add("close", "text-danger");
     removeButton.setAttribute("aria-label", "Close");
     removeButton.innerHTML =
         `<span aria-hidden="true">&times;</span>`;
     removeButton.addEventListener('click', (el) => deleteRow(el.target.parentNode.parentNode.parentNode));
-    removeRow.appendChild(removeButton);
+    return removeButton;
+}
+
+const createUrlInput = (url) => {
+    const urlInput = document.createElement("input");
+    urlInput.type = "url";
+    urlInput.classList.add("itemUrl", "form-control");
+    if (url) {
+        urlInput.value = url;
+    }
+    return urlInput;
+}
+
+const addUrlRow = (url) => {
+    const table = document.getElementById("itemUrls");
+    const row = table.insertRow();
+
+    const urlCell = row.insertCell(0);
+    urlCell.appendChild(createUrlInput(url));
+
+    const removeCell = row.insertCell(1);
+    removeCell.appendChild(createRemoveButton());
 }
 
 const deleteRow = (row) => {
@@ -74,19 +82,10 @@ const submit = (title, itemUrls) => {
         .then(data => {
             setSubmitButtonLoading(false);
             if (data.success) {
-                const objectToSend = {
-                    title: json.title,
-                    items: data.data.items
-                };
-
-                const params = {
-                    data: JSON.stringify(objectToSend)
-                }
-
-                const url = new URL(window.location.origin + "/create");
-                url.search = new URLSearchParams(params).toString();
-
-                window.location.href = url.toString();
+                sendDataToCreate({
+                    title,
+                    items: data.data.items,
+                });
             }
         })
         .catch(err => {
@@ -95,18 +94,32 @@ const submit = (title, itemUrls) => {
         });
 }
 
+const sendDataToCreate = (data) => {
+    const params = {
+        data: JSON.stringify(data)
+    };
+
+    const url = new URL("create", window.location.origin);
+    url.search = new URLSearchParams(params).toString();
+
+    window.location.href = url.toString();
+}
+
+const createSpinner = () => {
+    const span = document.createElement("span");
+    span.classList.add("spinner-border", "spinner-border-sm");
+    span.setAttribute("role", "status");
+    span.setAttribute("aria-hidden", "true");
+    return span;
+}
+
 const setSubmitButtonLoading = (isLoading) => {
     const button = document.getElementById('submitButton');
     if (isLoading) {
         button.disabled = true;
-
-        let span = document.createElement('span');
-        span.classList.add("spinner-border", "spinner-border-sm");
-        span.setAttribute("role", "status");
-        span.setAttribute("aria-hidden", "true");
-
         button.innerHTML = "";
-        button.appendChild(span);
+        const spinnerSpan = createSpinner();
+        button.appendChild(spinnerSpan);
         button.appendChild(document.createTextNode(" Loading..."));
     } else {
         button.disabled = false;
