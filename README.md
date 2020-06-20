@@ -10,5 +10,5 @@
 ### Locally
 
     git clone https://github.com/mpoc/ranker
-    yarn install --production
+    yarn install
     yarn prod
