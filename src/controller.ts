@@ -221,11 +221,8 @@ export const playMatch = async (req, res, next) => {
 
         game.itemPlaceChanges.push(calculateNumberOfDifferences(itemsBeforeVote, itemsAfterVote));
 
-        const accuracy = calculateAccuracy(game.items.length, game.itemPlaceChanges);
+        const accuracy = calculateAccuracy(game);
 
-        // const altAccuracy = average(game.items.map(item => item.rating.ratingDeviation));
-        // const limitedAccuracy = limitValue(shiftValueToRange(-altAccuracy, -350, -200, 0, 1), 0, 1);
-        
         game.markModified('items');
         game.markModified("itemPlaceChanges");
         const savedGame = await game.save().catch((error) => {
@@ -268,11 +265,13 @@ const calculateNForRunningAvg = (length: number) => {
     );
 }
 
-const calculateAccuracy = (totalNumberOfItems: number, changeArray: number[]) => {
+const calculateLastVoteAccuracy = (totalNumberOfItems: number, changeArray: number[]) => {
     if (changeArray.length < 1) return 0;
 
     const N = calculateNForRunningAvg(totalNumberOfItems);
     const rollingAverage = calculateRollingAverage(changeArray, N);
+
+    // Maybe calculate not from total number of items?
     const avgChangesProportion = rollingAverage / totalNumberOfItems;
 
     // If changeArray.length is less than N, the accuracy metric is inaccurate
@@ -287,6 +286,33 @@ const calculateAccuracy = (totalNumberOfItems: number, changeArray: number[]) =>
 
     const accuracy = (1 - avgChangesProportion) * accuracyPenaltyComplement;
     
+    return accuracy;
+}
+
+const calculateAccuracy = (game: IGame) => {
+    if (game.items[0].rating.ratingType == RatingType.Glicko2) {
+        const averageRD = average(game.items.map(item => item.rating.ratingDeviation));
+        const accuracy = convertRDtoAccuracy(averageRD);
+        return accuracy;
+    } else if (game.items[0].rating.ratingType == RatingType.Elo) {
+        // Fallback for Elo
+        const accuracy = calculateLastVoteAccuracy(game.items.length, game.itemPlaceChanges);
+        return accuracy;
+    }
+}
+
+const convertRDtoAccuracy = (ratingDeviation: number) => {
+    const DEFAULT_RATING_DEVIATION = 350;
+    // https://lichess.org/faq#provisional
+    const HIGHEST_CONFIDENCE_RATING_DEVIATION = 120;
+
+    const unboundedAccuracy =
+        shiftValueToRange(
+            -ratingDeviation,
+            -DEFAULT_RATING_DEVIATION, -HIGHEST_CONFIDENCE_RATING_DEVIATION,
+            0, 1
+        );
+    const accuracy = limitValue(unboundedAccuracy, 0, 1);
     return accuracy;
 }
 
@@ -329,7 +355,7 @@ export const getNewMatch = async (req, res, next) => {
             shuffle(itemsForGame);
         }
 
-        const accuracy = calculateAccuracy(game.items.length, game.itemPlaceChanges);
+        const accuracy = calculateAccuracy(game);
 
         respond({
             success: true,
@@ -338,7 +364,6 @@ export const getNewMatch = async (req, res, next) => {
                 accuracy,
                 items: itemsForGame
             }
-            
         }, OK, res);
     } catch (error) {
         next(error);

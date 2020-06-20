@@ -13,7 +13,7 @@ html(lang='en')
         style(type='text/css').
             img.choice {
                 max-width: 650px;
-                max-height: 650px;
+                max-height: 600px;
             }
             img.choice:hover {
                 cursor: pointer;
@@ -26,6 +26,34 @@ html(lang='en')
                     document.getElementsByClassName("choice"),
                     img => img.addEventListener("click", () => vote(img.getAttribute("item-id")))
                 );
+            }
+
+            const clearChoiceImagesSrc = () => {
+                Array.prototype.forEach.call(
+                    document.getElementsByClassName("choice"),
+                    img => img.src = ""
+                );
+            }
+
+            const removeElement = (element) => {
+                element.parentNode.removeChild(element);
+            }
+
+            const setImagesLoading = (loading) => {
+                if (loading) {
+                    const choiceImages = document.querySelectorAll(".choice");
+                    choiceImages.forEach(img => {
+                        const spinner = document.createElement('div');
+                        spinner.classList.add("spinner-border", "loading-image");
+                        spinner.style = "width: 3rem; height: 3rem;";
+                        spinner.setAttribute("role", "status");
+                        spinner.innerHTML = `<span class="sr-only">Loading...</span>`;
+                        img.parentNode.appendChild(spinner);
+                    });
+                } else {
+                    const loadingImageDivs = document.querySelectorAll(".loading-image");
+                    loadingImageDivs.forEach(el => removeElement(el));
+                }
             }
 
             const vote = (winnerId) => {
@@ -67,15 +95,22 @@ html(lang='en')
                     redirect: 'follow'
                 };
 
+                clearChoiceImagesSrc();
+                setImagesLoading(true);
+
                 fetch('/api/matches/new?gameId=' + gameId, options)
                     .then(res => res.json())
                     .then(data => {
+                        setImagesLoading(false);
                         if (data.success) {
                             setImages(data.data.items);
                             setAccuracy(data.data.accuracy);
                         }
                     })
-                    .catch(err => console.error(err));
+                    .catch(err => {
+                        setImagesLoading(false);
+                        console.error(err);
+                    });
             }
 
             const setImages = (items) => {
