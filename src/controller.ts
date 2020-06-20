@@ -329,32 +329,7 @@ export const getNewMatch = async (req, res, next) => {
 
         if (game.items.length < 2) throw new ErrorHandler(BAD_REQUEST, "Game does not contain enough items for a match")
 
-        let itemsForGame;
-        
-        // Either
-        // Pick two items at random OR
-        // Pick one random item from the bottom 30% of rating deviation and one random item
-        const random = Math.random();
-        if (random < 0.5) {
-            // Get just two random items
-            let items = game.items;
-            shuffle(items);
-            itemsForGame = [items[0], items[1]];
-        } else {
-            // Get two random items from the part with high rating deviation
-            // Possible to get no item if there are not enough items
-            const sortedByDeviation = game.items.sort((a, b) => b.rating.ratingDeviation - a.rating.ratingDeviation);
-            const untilIndex = Math.ceil(0.3 * sortedByDeviation.length);
-            const lowerHalf = sortedByDeviation.slice(0, untilIndex);
-
-            const deviationItem = getRandomItem(lowerHalf);
-            const removedDeviationItemArray = game.items.filter(item => item != deviationItem);
-            const randomItem = getRandomItem(removedDeviationItemArray);
-
-            itemsForGame = [deviationItem, randomItem];
-            shuffle(itemsForGame);
-        }
-
+        const itemsForGame = getItemsForNewMatch(game);
         const accuracy = calculateAccuracy(game);
 
         respond({
@@ -368,6 +343,36 @@ export const getNewMatch = async (req, res, next) => {
     } catch (error) {
         next(error);
     }
+}
+
+const getItemsForNewMatch = (game: IGame) => {
+    const random = Math.random();
+    if (random < 0.5) {
+        // Get just two random items
+
+        // Copying the array just in case
+        const items = shuffle([...game.items]);
+        
+        const itemsForGame = [items[0], items[1]];
+        return itemsForGame;
+    } else {
+        // Pick one random item from the bottom 30% of rating deviation and one random item
+
+        // DANGER: Possible to get no item if there are not enough items
+        // DANGER: Items might be Elo, so no RD
+
+        const sortedByDeviation = game.items.sort((a, b) => b.rating.ratingDeviation - a.rating.ratingDeviation);
+        const untilIndex = Math.ceil(0.3 * sortedByDeviation.length);
+        const lowerHalf = sortedByDeviation.slice(0, untilIndex);
+
+        const deviationItem = getRandomItem(lowerHalf);
+        const removedDeviationItemArray = game.items.filter(item => item != deviationItem);
+        const randomItem = getRandomItem(removedDeviationItemArray);
+
+        const itemsForGame = shuffle([deviationItem, randomItem]);
+        return itemsForGame;
+    }
+    // TODO: Add case where two items from bottom 30% are taken
 }
 
 export const addItems = async (req, res, next) => {
