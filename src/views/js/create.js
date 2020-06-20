@@ -4,12 +4,12 @@ const activateButtons = () => {
     document.getElementById("clearItems")
             .addEventListener('click', () => clearItemTable());
     document.getElementById("submitButton")
-            .addEventListener('click', () => submit(getTitle(), getItems()));
+            .addEventListener('click', () => submit(getGameTitle(), getItems()));
     document.getElementById("updateAllImages")
             .addEventListener('click', () => updateAllImages());
 }
 
-const getTitle = () => {
+const getGameTitle = () => {
     return document.getElementById('gameTitle').value;
 }
 
@@ -24,24 +24,34 @@ const getItems = () => {
     )
 }
 
+const createSpinner = () => {
+    const span = document.createElement("span");
+    span.classList.add("spinner-border", "spinner-border-sm");
+    span.setAttribute("role", "status");
+    span.setAttribute("aria-hidden", "true");
+    return span;
+}
+
 const setSubmitButtonLoading = (isLoading) => {
     const button = document.getElementById('submitButton');
     if (isLoading) {
         button.disabled = true;
-
-        let span = document.createElement('span');
-        span.classList.add("spinner-border", "spinner-border-sm");
-        span.setAttribute("role", "status");
-        span.setAttribute("aria-hidden", "true");
-
         button.innerHTML = "";
-        button.appendChild(span);
+        const spinnerSpan = createSpinner();
+        button.appendChild(spinnerSpan);
         button.appendChild(document.createTextNode(" Loading..."));
     } else {
         button.disabled = false;
         button.innerHTML = "";
         button.appendChild(document.createTextNode("Submit"));
     }
+}
+
+const disableButtons = () => {
+    document.getElementById("updateAllImages").disabled = true;
+    document.getElementById("addItemButton").disabled = true;
+    document.getElementById("clearItems").disabled = true;
+    document.getElementById("submitButton").disabled = true;
 }
 
 const submit = (title, items) => {
@@ -64,32 +74,8 @@ const submit = (title, items) => {
         .then(data => {
             setSubmitButtonLoading(false);
             if (data.success) {
-                document.getElementById('updateAllImages').disabled = true;
-                document.getElementById('addItemButton').disabled = true;
-                document.getElementById('clearItems').disabled = true;
-                document.getElementById('submitButton').disabled = true;
-
-                let table = document.getElementById('buttons');
-
-                let row1 = table.insertRow();
-                let voteButtonCell = row1.insertCell(0);
-                let voteButton = document.createElement('button'); 
-                voteButton.type = "button";
-                voteButton.classList.add("btn", "btn-primary");
-                voteButton.innerHTML = "Vote";
-                voteButton.addEventListener('click',
-                    el => window.open(window.location.origin + "/vote/" + data.data._id, '_blank'));
-                voteButtonCell.appendChild(voteButton);
-
-                let row2 = table.insertRow();
-                let ratingsCell = row2.insertCell(0);
-                let ratingsButton = document.createElement('button'); 
-                ratingsButton.type = "button";
-                ratingsButton.classList.add("btn", "btn-primary");
-                ratingsButton.innerHTML = "Ratings";
-                ratingsButton.addEventListener('click',
-                    el => window.open(window.location.origin + "/ratings/" + data.data._id, '_blank'));
-                ratingsCell.appendChild(ratingsButton);
+                disableButtons();
+                createGameButtons(data.data._id);
             }
         })
         .catch(err => {
@@ -98,85 +84,146 @@ const submit = (title, items) => {
         });
 }
 
+const createVoteButton = (id) => {
+    const voteButton = document.createElement('button'); 
+    voteButton.type = "button";
+    voteButton.classList.add("btn", "btn-primary");
+    voteButton.innerHTML = "Vote";
+    voteButton.addEventListener('click', () => openVoteTab(id));
+    return voteButton;
+}
+
+const openVoteTab = (id) => {
+    window.open(window.location.origin + "/vote/" + id, '_blank')
+}
+
+const createRatingsButton = (id) => {
+    const ratingsButton = document.createElement('button'); 
+    ratingsButton.type = "button";
+    ratingsButton.classList.add("btn", "btn-primary");
+    ratingsButton.innerHTML = "Ratings";
+    ratingsButton.addEventListener("click", () => openRatingsTab(id));
+    return ratingsButton;
+}
+
+const openRatingsTab = (id) => {
+    window.open(window.location.origin + "/ratings/" + id, "_blank");
+}
+
+const createGameButtons = (id) => {
+    const table = document.getElementById("buttons");
+
+    const voteButtonRow = table.insertRow();
+    const voteButtonCell = voteButtonRow.insertCell(0);
+    voteButtonCell.appendChild(createVoteButton(id));
+
+    const ratingsButtonRow = table.insertRow();
+    const ratingsButtonCell = ratingsButtonRow.insertCell(0);
+    ratingsButtonCell.appendChild(createRatingsButton(id));
+}
+
 const fillSentItems = () => {
     const urlParams = new URLSearchParams(window.location.search);
-    try {
-        const sentItems = JSON.parse(urlParams.get('data'));
-        if (sentItems && sentItems.items && sentItems.items.length) {
-            document.getElementById('gameTitle').value = sentItems.title;
-            Array.prototype.forEach.call(sentItems.items, item => addItemRow(item.title, item.url, item.imageUrl));
-        } else {
-            addItemRow();
-        }
-    } catch (e) {
+    const data = urlParams.get('data');
+    const sentItems = parseSentItems(data);
+    if (sentItems && sentItems.items) {
+        document.getElementById('gameTitle').value = sentItems.title;
+        sentItems.items.forEach(item => addItemRow(item.title, item.url, item.imageUrl));
+    } else {
         addItemRow();
     }
 }
 
-const addItemRow = (title, url, imageUrl) => {
-    const table = document.getElementById("items");
-    let row = table.insertRow();
-    row.classList.add("item");
+const parseSentItems = (data) => {
+    try {
+        return JSON.parse(data);
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
 
-    let titleRow = row.insertCell(0);
-    let urlRow = row.insertCell(1);
-    let imageUrlRow = row.insertCell(2);
-    let imagePreviewRow = row.insertCell(3);
-    let updateImageRow = row.insertCell(4);
-    let removeRow = row.insertCell(5);
-
-    let titleInput = document.createElement('input'); 
+const createItemTitleInput = (title) => {
+    const titleInput = document.createElement("input");
+    // titleInput.id = "title";
     titleInput.type = "text";
-    //- titleInput.id = "title";
     titleInput.classList.add("form-control");
     if (title) {
         titleInput.value = title;
     }
+    return titleInput;
+}
 
-    let urlInput = document.createElement('input'); 
+const createItemUrlInput = (url) => {
+    const urlInput = document.createElement('input'); 
     urlInput.type = "url";
     urlInput.id = "url";
     urlInput.classList.add("form-control");
     if (url) {
         urlInput.value = url;
     }
+    return urlInput;
+}
 
-    let imageUrlInput = document.createElement('input'); 
+const createItemImageUrlInput = (imageUrl) => {
+    const imageUrlInput = document.createElement('input'); 
     imageUrlInput.type = "url";
     imageUrlInput.id = "imageUrl";
     imageUrlInput.classList.add("form-control");
     if (imageUrl) {
         imageUrlInput.value = imageUrl;
     }
+    return imageUrlInput;
+}
 
-    let imageImg = document.createElement('img'); 
-    imageImg.id = "imagePreview";
-    imageImg.classList.add("preview");
+const createItemImagePreview = (imageUrl) => {
+    const imagePreview = document.createElement('img'); 
+    imagePreview.id = "imagePreview";
+    imagePreview.classList.add("preview");
     if (imageUrl) {
-        imageImg.src = imageUrl;
+        imagePreview.src = imageUrl;
     }
+    return imagePreview;
+}
 
-    let updateImageButton = document.createElement('button'); 
+const createItemUpdateImageButton = () => {
+    const updateImageButton = document.createElement('button', ); 
     updateImageButton.type = "button";
-    updateImageButton.id = "imageUrl";
+    // updateImageButton.id = "imageUrl";
     updateImageButton.classList.add("btn", "btn-primary");
     updateImageButton.innerHTML = "Update image";
     updateImageButton.addEventListener('click', (el) => updateImageWithButton(el.target));
+    return updateImageButton;
+}
 
-    let removeButton = document.createElement('button');
+const createItemRemoveButton = () => {
+    const removeButton = document.createElement('button');
     removeButton.type = "button";
     removeButton.classList.add("close", "text-danger");
     removeButton.setAttribute("aria-label", "Close");
-    removeButton.innerHTML =
-        `<span aria-hidden="true">&times;</span>`;
+    removeButton.innerHTML = `<span aria-hidden="true">&times;</span>`;
     removeButton.addEventListener('click', (el) => deleteRow(el.target.parentNode.parentNode.parentNode));
+    return removeButton;
+}
 
-    titleRow.appendChild(titleInput);
-    urlRow.appendChild(urlInput);
-    imageUrlRow.appendChild(imageUrlInput);
-    imagePreviewRow.appendChild(imageImg);
-    updateImageRow.appendChild(updateImageButton);
-    removeRow.appendChild(removeButton);
+const addItemRow = (title, url, imageUrl) => {
+    const table = document.getElementById("items");
+    const row = table.insertRow();
+    row.classList.add("item");
+    
+    const titleRow = row.insertCell(0);
+    const urlRow = row.insertCell(1);
+    const imageUrlRow = row.insertCell(2);
+    const imagePreviewRow = row.insertCell(3);
+    const updateImageRow = row.insertCell(4);
+    const removeRow = row.insertCell(5);
+
+    titleRow.appendChild(createItemTitleInput(title));
+    urlRow.appendChild(createItemUrlInput(url));
+    imageUrlRow.appendChild(createItemImageUrlInput(imageUrl));
+    imagePreviewRow.appendChild(createItemImagePreview(imageUrl));
+    updateImageRow.appendChild(createItemUpdateImageButton());
+    removeRow.appendChild(createItemRemoveButton());
 }
 
 const deleteRow = (row) => {
@@ -195,7 +242,6 @@ const updateImageWithButton = (button) => {
 }
 
 const updateAllImages = () => {
-    console.log(document.getElementById('items').getElementsByTagName('tr'));
     Array.prototype.forEach.call(
         document.getElementById('items').getElementsByTagName('tr'),
         row => row.getElementsByTagName('img')[0].src = row.getElementsByTagName('input')[2].value
