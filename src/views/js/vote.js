@@ -18,17 +18,19 @@ const removeElement = (element) => {
     element.parentNode.removeChild(element);
 }
 
+const createSpinner = () => {
+    const spinner = document.createElement("div");
+    spinner.classList.add("spinner-border", "loading-image");
+    spinner.style = "width: 3rem; height: 3rem;";
+    spinner.setAttribute("role", "status");
+    spinner.innerHTML = `<span class="sr-only">Loading...</span>`;
+    return spinner;
+}
+
 const setImagesLoading = (loading) => {
     if (loading) {
         const choiceImages = document.querySelectorAll(".choice");
-        choiceImages.forEach(img => {
-            const spinner = document.createElement('div');
-            spinner.classList.add("spinner-border", "loading-image");
-            spinner.style = "width: 3rem; height: 3rem;";
-            spinner.setAttribute("role", "status");
-            spinner.innerHTML = `<span class="sr-only">Loading...</span>`;
-            img.parentNode.appendChild(spinner);
-        });
+        choiceImages.forEach(img => img.parentNode.appendChild(createSpinner()));
     } else {
         const loadingImageDivs = document.querySelectorAll(".loading-image");
         loadingImageDivs.forEach(el => removeElement(el));
@@ -92,42 +94,38 @@ const fetchImagesForMatch = () => {
         });
 }
 
+const storeItemIds = (items) => {
+    itemIdArray = items.map((item) => item._id);
+}
+
+const setItemImage = (element, itemId, imageUrl) => {
+    element.setAttribute("item-id", itemId);
+    element.src = imageUrl;
+}
+
+const setItemTitle = (item, title, url) => {
+    const itemLink = document.createElement("a");
+    itemLink.href = url;
+    itemLink.innerHTML = title;
+
+    item.innerHTML = "";
+    item.appendChild(itemLink);
+}
+
 const setImages = (items) => {
-    itemIdArray = items.map(item => item._id);
+    storeItemIds(items);
 
-    const firstChoice = document.getElementById('firstChoice');
-    firstChoice.setAttribute('item-id', items[0]._id);
-    firstChoice.setAttribute('src', items[0].imageUrl);
+    setItemImage(document.getElementById("firstChoice"), items[0]._id, items[0].imageUrl);
+    setItemImage(document.getElementById("secondChoice"), items[1]._id, items[1].imageUrl);
 
-    const secondChoice = document.getElementById('secondChoice');
-    secondChoice.setAttribute('item-id', items[1]._id);
-    secondChoice.setAttribute('src', items[1].imageUrl);
+    setItemTitle(document.getElementById("firstTitle"), items[0].title, items[0].url);
+    setItemTitle(document.getElementById("secondTitle"), items[1].title, items[1].url);
 
-    const firstTitle = document.getElementById('firstTitle');
-    const firstTitleA = document.createElement('a');
-    firstTitleA.href = items[0].url;
-    firstTitleA.innerHTML = items[0].title;
-    firstTitle.innerHTML = "";
-    firstTitle.appendChild(firstTitleA);
+    // document.getElementById('firstRating').innerHTML = "Rating: " + items[0].rating.rating;
+    // document.getElementById('secondRating').innerHTML = "Rating: " + items[1].rating.rating;
 
-    const secondTitle = document.getElementById('secondTitle');
-    const secondTitleA = document.createElement('a');
-    secondTitleA.href = items[1].url;
-    secondTitleA.innerHTML = items[1].title;
-    secondTitle.innerHTML = "";
-    secondTitle.appendChild(secondTitleA);
-
-    //- const firstRating = document.getElementById('firstRating');
-    //- firstRating.innerHTML = "Rating: " + items[0].rating.rating;
-
-    //- const secondRating = document.getElementById('secondRating');
-    //- secondRating.innerHTML = "Rating: " + items[1].rating.rating;
-
-    const firstDeviation = document.getElementById('firstDeviation');
-    firstDeviation.innerHTML = "Rating deviation: " + items[0].rating.ratingDeviation;
-
-    const secondDeviation = document.getElementById('secondDeviation');
-    secondDeviation.innerHTML = "Rating deviation: " + items[1].rating.ratingDeviation;
+    // document.getElementById('firstDeviation').innerHTML = "Rating deviation: " + items[0].rating.ratingDeviation;
+    // document.getElementById('secondDeviation').innerHTML = "Rating deviation: " + items[1].rating.ratingDeviation;
 }
 
 document.addEventListener('keydown', (e) => {
