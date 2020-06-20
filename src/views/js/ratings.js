@@ -9,35 +9,50 @@ const fetchGame = () => {
 
     fetch('/api/games?id=' + gameId, options)
         .then(res => res.json())
-        .then(data => { if (data.success) populateTable(data.data.items) })
+        .then(data => {
+            if (data.success) {
+                populateTable(data.data.items);
+            }
+        })
         .catch(err => console.error(err));
 }
 
-let lowestRank = 1;
+const createItemTitle = (title, url) => {
+    const titleLink = document.createElement("a");
+    titleLink.href = url;
+    titleLink.innerHTML = title;
+    return titleLink;
+}
+
+const createItemImage = (imageUrl, url) => {
+    const image = document.createElement("img");
+    image.src = imageUrl;
+    image.loading = "lazy";
+
+    const imageLink = document.createElement("a");
+    imageLink.href = url;
+    imageLink.appendChild(image);
+
+    return imageLink;
+}
+
+let nextRank = 1;
 
 const populateTable = (items) => {
     const table = document.getElementById("items");
     items.forEach(item => {
-        let row = table.insertRow();
+        const row = table.insertRow();
 
-        let rank = row.insertCell(0);
-        let title = row.insertCell(1);
-        let elo = row.insertCell(2);
-        let image = row.insertCell(3);
-
-        let img = document.createElement('img');
-        img.src = item.imageUrl;
-        img.loading = "lazy";
-
-        let a = document.createElement('a');
-        a.href = item.url;
-        a.innerHTML = item.title;
-
-        rank.innerHTML = lowestRank++;
-        title.appendChild(a);
-        //- elo.innerHTML = item.rating.rating + "<br>" + item.rating.ratingDeviation;
-        elo.innerHTML = item.rating.rating;
-        image.appendChild(img);
+        const rankCell = row.insertCell(0);
+        const titleCell = row.insertCell(1);
+        const ratingCell = row.insertCell(2);
+        const imageCell = row.insertCell(3);
+        
+        rankCell.innerHTML = nextRank++;
+        titleCell.appendChild(createItemTitle(item.title, item.url));
+        ratingCell.innerHTML = item.rating.rating;
+        //- ratingCell.innerHTML = item.rating.rating + "<br>" + item.rating.ratingDeviation;
+        imageCell.appendChild(createItemImage(item.imageUrl, item.url));
     });
 }
 
