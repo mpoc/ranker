@@ -42,7 +42,7 @@ import {
 } from "./models/item.model";
 import { ErrorHandler } from "./error";
 import { EloPlayer, EloMatch } from "./ratings/elo";
-import { respond, shuffle, getRandomInt, getRandomItem, logger } from "./utils";
+import { respond, shuffle, getRandomInt, getRandomItem, logger, shiftValueToRange, limitValue } from "./utils";
 
 export const addGame = async (req, res, next) => {
     try {
@@ -129,12 +129,6 @@ export const getGame = async (req, res, next) => {
         const { error, value }: { error, value: GetGameRequest } = getGameRequestSchema.validate(req.query);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
     
-        // const gameExists = await Game.exists({ _id: value.id }).catch(error => {
-        //     throw new ErrorHandler(BAD_REQUEST, error.reason)
-        // });
-
-        // if (!gameExists) throw new ErrorHandler(NOT_FOUND, "Game not found");
-
         // Get a game by id with its items sorted by elo.
         // In the grouping stage, you have to name each field,
         // maybe find a more decoupled way of doing it?
@@ -142,10 +136,10 @@ export const getGame = async (req, res, next) => {
             { '$match': { '_id': mongoose.Types.ObjectId(value.id) } },
             { '$unwind': { 'path': '$items' } },
             { '$sort': { 'items.rating.rating': -1 } },
-            { '$group': { '_id': '$_id', 'items': { '$push': '$items' }, 'title': { '$first': '$title' } } }
+            { '$group': { '_id': '$_id', 'items': { '$push': '$items' }, 'title': { '$first': '$title' }, 'itemPlaceChanges': { '$first': '$itemPlaceChanges' } } }
         ]).exec().catch(error => { throw new ErrorHandler(INTERNAL_SERVER_ERROR, error) });
 
-        if (!foundGame || !foundGame.length) return next(new ErrorHandler(NOT_FOUND, "Game not found"));
+        if (!foundGame || !foundGame.length) throw new ErrorHandler(NOT_FOUND, "Game not found");
     
         respond({
             success: true,
@@ -156,8 +150,6 @@ export const getGame = async (req, res, next) => {
         next(error);
     }
 }
-
-// let changes = [];
 
 export const playMatch = async (req, res, next) => {
     try {
@@ -184,12 +176,9 @@ export const playMatch = async (req, res, next) => {
         // Disallow more than 2 items for now
         if (items.length > 2) throw new ErrorHandler(BAD_REQUEST, "Cannot play a match with more than 2 items");
 
-        // const itemsBeforeVote = (await Game.aggregate([
-        //     { '$match': { '_id': mongoose.Types.ObjectId(game._id) } },
-        //     { '$unwind': { 'path': '$items' } },
-        //     { '$sort': { 'items.rating.rating': -1 } },
-        //     { '$group': { '_id': '$_id', 'items': { '$push': '$items' }, 'title': { '$first': '$title' } } }
-        // ]).exec())[0].items;
+        const itemsBeforeVote = [...game.items]
+            .sort((a, b) => b.rating.rating - a.rating.rating)
+            .map(item => String(item._id));
 
         // Needs decoupling
         if (items[0].rating.ratingType == RatingType.Elo) {
@@ -226,37 +215,105 @@ export const playMatch = async (req, res, next) => {
             items[1].matchCount++;
         }
 
+        const itemsAfterVote = [...game.items]
+            .sort((a, b) => b.rating.rating - a.rating.rating)
+            .map((item) => String(item._id));
+
+        game.itemPlaceChanges.push(calculateNumberOfDifferences(itemsBeforeVote, itemsAfterVote));
+
+        const accuracy = calculateAccuracy(game);
+
         game.markModified('items');
+        game.markModified("itemPlaceChanges");
         const savedGame = await game.save().catch((error) => {
             throw new ErrorHandler(INTERNAL_SERVER_ERROR, error);
         });
 
-        // let itemsAfterVote = (await Game.aggregate([
-        //     { '$match': { '_id': mongoose.Types.ObjectId(game._id) } },
-        //     { '$unwind': { 'path': '$items' } },
-        //     { '$sort': { 'items.rating.rating': -1 } },
-        //     { '$group': { '_id': '$_id', 'items': { '$push': '$items' }, 'title': { '$first': '$title' } } }
-        // ]).exec())[0].items;
-
-        // const numberOfChangedElements = 
-        //     itemsBeforeVote.reduce(
-        //         (sum, item, index) => 
-        //             sum + ((String(item._id) != String(itemsAfterVote[index]._id)) ? 1 : 0)
-        //     , 0);
-        // changes.push(numberOfChangedElements);
-        // const n = 14;
-        // const lastN = changes.slice(-n);
-        // const avg = lastN.reduce((a, b) => a + b, 0) / ((lastN.length < n) ? lastN.length : n);
-        // logger.info("Average number of changed elements: " + avg);
-
         respond({
             success: true,
             message: "Items updated successfully",
-            data: items
+            data: {
+                accuracy,
+                items
+            }
         }, OK, res);
     } catch (error) {
         next(error);
     }
+}
+
+// Calculates the number differences in the array
+const calculateNumberOfDifferences = (array1: any[], array2: any[]) => {
+    return array1.reduce((sum, item, index) => sum + (item != array2[index] ? 1 : 0), 0);
+}
+
+// Calculates the average from a number array
+const average = (array: number[]) => {
+    return (array.reduce((a, b) => a + b, 0) / array.length) || 0;
+}
+
+// Calculates the rolling average for the last n elements of array
+const calculateRollingAverage = (array: number[], N: number) => {
+    return average(array.slice(-N));
+}
+
+const calculateNForRunningAvg = (length: number) => {
+    const minimumNumberOfElements = 20;
+    return Math.max(
+        Math.floor(3 * Math.sqrt(length)),
+        minimumNumberOfElements
+    );
+}
+
+const calculateLastVoteAccuracy = (totalNumberOfItems: number, changeArray: number[]) => {
+    if (changeArray.length < 1) return 0;
+
+    const N = calculateNForRunningAvg(totalNumberOfItems);
+    const rollingAverage = calculateRollingAverage(changeArray, N);
+
+    // Maybe calculate not from total number of items?
+    const avgChangesProportion = rollingAverage / totalNumberOfItems;
+
+    // If changeArray.length is less than N, the accuracy metric is inaccurate
+    // because less than N votes have been made. Make accuracy suffer a penalty
+    // if it is inaccurate.
+    const INACCURATE_ACCURACY_PENALTY = 0.3;
+    const accuracyPenalty =
+        changeArray.length < N
+            ? INACCURATE_ACCURACY_PENALTY
+            : 0;
+    const accuracyPenaltyComplement = 1 - accuracyPenalty;
+
+    const accuracy = (1 - avgChangesProportion) * accuracyPenaltyComplement;
+    
+    return accuracy;
+}
+
+const calculateAccuracy = (game: IGame) => {
+    if (game.items[0].rating.ratingType == RatingType.Glicko2) {
+        const averageRD = average(game.items.map(item => item.rating.ratingDeviation));
+        const accuracy = convertRDtoAccuracy(averageRD);
+        return accuracy;
+    } else if (game.items[0].rating.ratingType == RatingType.Elo) {
+        // Fallback for Elo
+        const accuracy = calculateLastVoteAccuracy(game.items.length, game.itemPlaceChanges);
+        return accuracy;
+    }
+}
+
+const convertRDtoAccuracy = (ratingDeviation: number) => {
+    const DEFAULT_RATING_DEVIATION = 350;
+    // https://lichess.org/faq#provisional
+    const HIGHEST_CONFIDENCE_RATING_DEVIATION = 120;
+
+    const unboundedAccuracy =
+        shiftValueToRange(
+            -ratingDeviation,
+            -DEFAULT_RATING_DEVIATION, -HIGHEST_CONFIDENCE_RATING_DEVIATION,
+            0, 1
+        );
+    const accuracy = limitValue(unboundedAccuracy, 0, 1);
+    return accuracy;
 }
 
 export const getNewMatch = async (req, res, next) => {
@@ -298,10 +355,15 @@ export const getNewMatch = async (req, res, next) => {
             shuffle(itemsForGame);
         }
 
+        const accuracy = calculateAccuracy(game);
+
         respond({
             success: true,
             message: "Items found",
-            data: itemsForGame
+            data: {
+                accuracy,
+                items: itemsForGame
+            }
         }, OK, res);
     } catch (error) {
         next(error);

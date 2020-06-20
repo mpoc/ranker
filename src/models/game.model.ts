@@ -6,12 +6,18 @@ import {
 
 export interface IGame extends mongoose.Document {
     title: string,
+    itemPlaceChanges: number[],
     items: IItem[],
 };
 
 export const GameSchema = new mongoose.Schema({
     title: {
         type: String,
+        required: true
+    },
+    itemPlaceChanges: {
+        type: [Number],
+        default: [],
         required: true
     },
     items: {

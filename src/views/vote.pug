@@ -13,7 +13,7 @@ html(lang='en')
         style(type='text/css').
             img.choice {
                 max-width: 650px;
-                max-height: 650px;
+                max-height: 600px;
             }
             img.choice:hover {
                 cursor: pointer;
@@ -26,6 +26,34 @@ html(lang='en')
                     document.getElementsByClassName("choice"),
                     img => img.addEventListener("click", () => vote(img.getAttribute("item-id")))
                 );
+            }
+
+            const clearChoiceImagesSrc = () => {
+                Array.prototype.forEach.call(
+                    document.getElementsByClassName("choice"),
+                    img => img.src = ""
+                );
+            }
+
+            const removeElement = (element) => {
+                element.parentNode.removeChild(element);
+            }
+
+            const setImagesLoading = (loading) => {
+                if (loading) {
+                    const choiceImages = document.querySelectorAll(".choice");
+                    choiceImages.forEach(img => {
+                        const spinner = document.createElement('div');
+                        spinner.classList.add("spinner-border", "loading-image");
+                        spinner.style = "width: 3rem; height: 3rem;";
+                        spinner.setAttribute("role", "status");
+                        spinner.innerHTML = `<span class="sr-only">Loading...</span>`;
+                        img.parentNode.appendChild(spinner);
+                    });
+                } else {
+                    const loadingImageDivs = document.querySelectorAll(".loading-image");
+                    loadingImageDivs.forEach(el => removeElement(el));
+                }
             }
 
             const vote = (winnerId) => {
@@ -44,10 +72,18 @@ html(lang='en')
 
                 fetch('/api/matches', options)
                     .then(res => res.json())
-                    .then(data => console.log(data))
+                    .then(data => {
+                        if (data.success) {
+                            setAccuracy(data.data.accuracy);
+                            fetchImagesForMatch();
+                        }
+                    })
                     .catch(err => console.error(err));
+            }
 
-                location.reload();
+            const setAccuracy = (accuracy) => {
+                document.getElementById('accuracy').textContent =
+                    "Accuracy: " + Math.round(accuracy * 100) + "%";
             }
 
             const fetchImagesForMatch = () => {
@@ -59,40 +95,59 @@ html(lang='en')
                     redirect: 'follow'
                 };
 
+                clearChoiceImagesSrc();
+                setImagesLoading(true);
+
                 fetch('/api/matches/new?gameId=' + gameId, options)
                     .then(res => res.json())
-                    .then(data => { if (data.success) setImages(data.data) })
-                    .catch(err => console.error(err));
+                    .then(data => {
+                        setImagesLoading(false);
+                        if (data.success) {
+                            setImages(data.data.items);
+                            setAccuracy(data.data.accuracy);
+                        }
+                    })
+                    .catch(err => {
+                        setImagesLoading(false);
+                        console.error(err);
+                    });
             }
 
             const setImages = (items) => {
                 itemIdArray = items.map(item => item._id);
 
                 const firstChoice = document.getElementById('firstChoice');
-                const secondChoice = document.getElementById('secondChoice');
-
                 firstChoice.setAttribute('item-id', items[0]._id);
-                secondChoice.setAttribute('item-id', items[1]._id);
-
                 firstChoice.setAttribute('src', items[0].imageUrl);
+
+                const secondChoice = document.getElementById('secondChoice');
+                secondChoice.setAttribute('item-id', items[1]._id);
                 secondChoice.setAttribute('src', items[1].imageUrl);
 
                 const firstTitle = document.getElementById('firstTitle');
-                const secondTitle = document.getElementById('secondTitle');
+                const firstTitleA = document.createElement('a');
+                firstTitleA.href = items[0].url;
+                firstTitleA.innerHTML = items[0].title;
+                firstTitle.innerHTML = "";
+                firstTitle.appendChild(firstTitleA);
 
-                firstTitle.innerHTML = items[0].title;
-                secondTitle.innerHTML = items[1].title;
+                const secondTitle = document.getElementById('secondTitle');
+                const secondTitleA = document.createElement('a');
+                secondTitleA.href = items[1].url;
+                secondTitleA.innerHTML = items[1].title;
+                secondTitle.innerHTML = "";
+                secondTitle.appendChild(secondTitleA);
 
                 //- const firstRating = document.getElementById('firstRating');
-                //- const secondRating = document.getElementById('secondRating');
-
                 //- firstRating.innerHTML = "Rating: " + items[0].rating.rating;
+
+                //- const secondRating = document.getElementById('secondRating');
                 //- secondRating.innerHTML = "Rating: " + items[1].rating.rating;
 
                 const firstDeviation = document.getElementById('firstDeviation');
-                const secondDeviation = document.getElementById('secondDeviation');
-
                 firstDeviation.innerHTML = "Rating deviation: " + items[0].rating.ratingDeviation;
+
+                const secondDeviation = document.getElementById('secondDeviation');
                 secondDeviation.innerHTML = "Rating deviation: " + items[1].rating.ratingDeviation;
             }
 
@@ -131,3 +186,4 @@ html(lang='en')
                         tr
                             td#firstDeviation
                             td#secondDeviation
+                h5#accuracy Accuracy = N/A

@@ -57,3 +57,14 @@ export const getRandomInt = (max: number) => {
 export const getRandomItem = (array: any[]) => {
     return array[getRandomInt(array.length)];
 }
+
+export const shiftValueToRange = (value: number, valueMin: number, valueMax: number, rangeMin: number, rangeMax: number) => {
+    // https://math.stackexchange.com/questions/914823/shift-numbers-into-a-different-range
+    return rangeMin + ((rangeMax - rangeMin) / (valueMax - valueMin)) * (value - valueMin)
+}
+
+export const limitValue = (value: number, min: number, max: number) => {
+    if (value < min) return min;
+    if (value > max) return max;
+    return value;
+}
