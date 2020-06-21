@@ -52,6 +52,7 @@ const vote = (winnerId) => {
     }
 
     clearChoiceImagesSrc();
+    clearItemTitles();
     setImagesLoading(true);
 
     fetch('/api/matches', options)
@@ -101,6 +102,11 @@ const storeItemIds = (items) => {
 const setItemImage = (element, itemId, imageUrl) => {
     element.setAttribute("item-id", itemId);
     element.src = imageUrl;
+}
+
+const clearItemTitles = () => {
+    document.getElementById("firstTitle").innerHTML = "";
+    document.getElementById("secondTitle").innerHTML = "";
 }
 
 const setItemTitle = (item, title, url) => {
