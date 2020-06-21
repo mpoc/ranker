@@ -5,8 +5,6 @@ const activateButtons = () => {
             .addEventListener('click', () => clearItemTable());
     document.getElementById("submitButton")
             .addEventListener('click', () => submit(getGameTitle(), getItems()));
-    document.getElementById("updateAllImages")
-            .addEventListener('click', () => updateAllImages());
 }
 
 const getGameTitle = () => {
@@ -48,7 +46,6 @@ const setSubmitButtonLoading = (isLoading) => {
 }
 
 const disableButtons = () => {
-    document.getElementById("updateAllImages").disabled = true;
     document.getElementById("addItemButton").disabled = true;
     document.getElementById("clearItems").disabled = true;
     document.getElementById("submitButton").disabled = true;
@@ -173,11 +170,12 @@ const createItemImageUrlInput = (imageUrl) => {
     if (imageUrl) {
         imageUrlInput.value = imageUrl;
     }
+    imageUrlInput.addEventListener("input", () => updateImagePreview(imageUrlInput));
     return imageUrlInput;
 }
 
 const createItemImagePreview = (imageUrl) => {
-    const imagePreview = document.createElement('img'); 
+    const imagePreview = document.createElement('img');
     imagePreview.id = "imagePreview";
     imagePreview.classList.add("preview");
     if (imageUrl) {
@@ -186,23 +184,13 @@ const createItemImagePreview = (imageUrl) => {
     return imagePreview;
 }
 
-const createItemUpdateImageButton = () => {
-    const updateImageButton = document.createElement('button', ); 
-    updateImageButton.type = "button";
-    // updateImageButton.id = "imageUrl";
-    updateImageButton.classList.add("btn", "btn-primary");
-    updateImageButton.innerHTML = "Update image";
-    updateImageButton.addEventListener('click', (el) => updateImageWithButton(el.target));
-    return updateImageButton;
-}
-
 const createItemRemoveButton = () => {
     const removeButton = document.createElement('button');
     removeButton.type = "button";
     removeButton.classList.add("close", "text-danger");
     removeButton.setAttribute("aria-label", "Close");
     removeButton.innerHTML = `<span aria-hidden="true">&times;</span>`;
-    removeButton.addEventListener('click', (el) => deleteRow(el.target.parentNode.parentNode.parentNode));
+    removeButton.addEventListener('click', (ev) => deleteRow(ev.target.parentNode.parentNode.parentNode));
     return removeButton;
 }
 
@@ -211,19 +199,17 @@ const addItemRow = (title, url, imageUrl) => {
     const row = table.insertRow();
     row.classList.add("item");
     
-    const titleRow = row.insertCell(0);
-    const urlRow = row.insertCell(1);
-    const imageUrlRow = row.insertCell(2);
-    const imagePreviewRow = row.insertCell(3);
-    const updateImageRow = row.insertCell(4);
-    const removeRow = row.insertCell(5);
+    const titleCell = row.insertCell(0);
+    const urlCell = row.insertCell(1);
+    const imageUrlCell = row.insertCell(2);
+    const imagePreviewCell = row.insertCell(3);
+    const removeCell = row.insertCell(4);
 
-    titleRow.appendChild(createItemTitleInput(title));
-    urlRow.appendChild(createItemUrlInput(url));
-    imageUrlRow.appendChild(createItemImageUrlInput(imageUrl));
-    imagePreviewRow.appendChild(createItemImagePreview(imageUrl));
-    updateImageRow.appendChild(createItemUpdateImageButton());
-    removeRow.appendChild(createItemRemoveButton());
+    titleCell.appendChild(createItemTitleInput(title));
+    urlCell.appendChild(createItemUrlInput(url));
+    imageUrlCell.appendChild(createItemImageUrlInput(imageUrl));
+    imagePreviewCell.appendChild(createItemImagePreview(imageUrl));
+    removeCell.appendChild(createItemRemoveButton());
 }
 
 const deleteRow = (row) => {
@@ -231,21 +217,12 @@ const deleteRow = (row) => {
     document.getElementById("items").deleteRow(rowIndex - 1);
 }
 
-const updateImageWithButton = (button) => {
-    const row = button
+const updateImagePreview = (imageUrlInput) => {
+    const tr = imageUrlInput
         .parentElement  // td
         .parentElement; // tr
-
-    //- row.getElementById('imagePreview').src = row.getElementById('imageUrl').value;
-    // Ugly and temporary solution because Elements have no getElementById method
-    row.getElementsByTagName('img')[0].src = row.getElementsByTagName('input')[2].value;
-}
-
-const updateAllImages = () => {
-    Array.prototype.forEach.call(
-        document.getElementById('items').getElementsByTagName('tr'),
-        row => row.getElementsByTagName('img')[0].src = row.getElementsByTagName('input')[2].value
-    );
+    const imagePreview = tr.getElementsByTagName("img")[0];
+    imagePreview.src = imageUrlInput.value;
 }
 
 const clearUrlParams = () => {
