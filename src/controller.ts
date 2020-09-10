@@ -46,7 +46,7 @@ import { respond, shuffle, getRandomInt, getRandomItem, logger, shiftValueToRang
 
 export const addGame = async (req, res, next) => {
     try {
-        const { error, value }: { error, value: AddGameRequest } = addGameRequestSchema.validate(req.body);
+        const { error, value }: { error?, value: AddGameRequest } = addGameRequestSchema.validate(req.body);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
     
         // Items is optional, if not provided, create a game without items
@@ -75,7 +75,7 @@ export const addGame = async (req, res, next) => {
 
 export const autoAddGame = async (req, res, next) => {
     try {
-        const { error, value }: { error, value: AutoAddGameRequest } = autoAddGameRequestSchema.validate(req.body);
+        const { error, value }: { error?, value: AutoAddGameRequest } = autoAddGameRequestSchema.validate(req.body);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
 
         // Temporary "rate limiting"
@@ -126,7 +126,7 @@ export const autoAddGame = async (req, res, next) => {
 
 export const getGame = async (req, res, next) => {
     try {
-        const { error, value }: { error, value: GetGameRequest } = getGameRequestSchema.validate(req.query);
+        const { error, value }: { error?, value: GetGameRequest } = getGameRequestSchema.validate(req.query);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
     
         // Get a game by id with its items sorted by elo.
@@ -153,7 +153,7 @@ export const getGame = async (req, res, next) => {
 
 export const playMatch = async (req, res, next) => {
     try {
-        const { error, value }: { error, value: PlayMatchRequest } = playMatchRequestSchema.validate(req.body);
+        const { error, value }: { error?, value: PlayMatchRequest } = playMatchRequestSchema.validate(req.body);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
 
         const game = await Game.findOne({
@@ -321,7 +321,7 @@ const convertRDtoAccuracy = (ratingDeviation: number) => {
 
 export const getNewMatch = async (req, res, next) => {
     try {
-        const { error, value }: { error, value: GetNewMatchRequest } = getNewMatchRequestSchema.validate(req.query);
+        const { error, value }: { error?, value: GetNewMatchRequest } = getNewMatchRequestSchema.validate(req.query);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
 
         const game = await Game.findById(value.gameId).exec().catch(error => {
@@ -380,7 +380,7 @@ const getItemsForNewMatch = (game: IGame) => {
 
 export const addItems = async (req, res, next) => {
     try {
-        const { error, value }: { error, value: AddItemsRequest } = addItemsRequestSchema.validate(req.body);
+        const { error, value }: { error?, value: AddItemsRequest } = addItemsRequestSchema.validate(req.body);
         if (error) throw new ErrorHandler(BAD_REQUEST, error);
 
         const game = await Game.findById(value.gameId).exec().catch((error) => {

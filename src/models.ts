@@ -1,4 +1,4 @@
-import Joi from "@hapi/joi";
+import Joi from "joi";
 import { IRating } from "./models/item.model";
 
 export const itemToAddSchema = Joi.object({
