@@ -82,29 +82,23 @@ const submit = (title, items) => {
 }
 
 const createVoteButton = (id) => {
-    const voteButton = document.createElement('button'); 
-    voteButton.type = "button";
+    const voteButton = document.createElement('a');
+    voteButton.setAttribute("role", "button");
     voteButton.classList.add("btn", "btn-primary");
     voteButton.innerHTML = "Vote";
-    voteButton.addEventListener('click', () => openVoteTab(id));
+    voteButton.target = "_blank";
+    voteButton.href = "/vote/" + id;
     return voteButton;
 }
 
-const openVoteTab = (id) => {
-    window.open(window.location.origin + "/vote/" + id, '_blank')
-}
-
 const createRatingsButton = (id) => {
-    const ratingsButton = document.createElement('button'); 
-    ratingsButton.type = "button";
+    const ratingsButton = document.createElement('a'); 
+    ratingsButton.setAttribute("role", "button");
     ratingsButton.classList.add("btn", "btn-primary");
     ratingsButton.innerHTML = "Ratings";
-    ratingsButton.addEventListener("click", () => openRatingsTab(id));
+    ratingsButton.target = "_blank";
+    ratingsButton.href = "/ratings/" + id;
     return ratingsButton;
-}
-
-const openRatingsTab = (id) => {
-    window.open(window.location.origin + "/ratings/" + id, "_blank");
 }
 
 const createGameButtons = (id) => {
