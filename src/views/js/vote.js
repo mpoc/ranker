@@ -7,6 +7,11 @@ const makeImagesClickable = () => {
     );
 }
 
+const activateRatingsButton = () => {
+    const ratingsButton = document.getElementById('ratingsButton');
+    ratingsButton.href = "/ratings/" + getGameId();
+};
+
 const clearChoiceImagesSrc = () => {
     Array.prototype.forEach.call(
         document.getElementsByClassName("choice"),
@@ -71,14 +76,19 @@ const setAccuracy = (accuracy) => {
         "Accuracy: " + Math.round(accuracy * 100) + "%";
 }
 
-const fetchImagesForMatch = () => {
-    const path = window.location.pathname.split('/'); 
+const getGameId = () => {
+    const path = window.location.pathname.split('/');
     const gameId = path[path.length - 1];
+    return gameId;
+};
 
+const fetchImagesForMatch = () => {
     const options = {
         method: 'GET',
         redirect: 'follow'
     };
+    
+    const gameId = getGameId();
 
     fetch('/api/matches/new?gameId=' + gameId, options)
         .then(res => res.json())
@@ -149,5 +159,6 @@ document.addEventListener('keydown', (e) => {
 
 window.onload = () => {
     makeImagesClickable();
+    activateRatingsButton();
     fetchImagesForMatch();
 }
