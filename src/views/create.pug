@@ -30,13 +30,16 @@ html(lang='en')
                             th
                             th
                     tbody#items
+                        tr
+                            td
+                                button#addItemButton.btn.btn-primary(type="button")
+                                    include includes/bootstrap-plus-icon.pug
+                                    |  Add item
                 table.table.table-responsive.table-borderless
                     tbody#buttons
                         tr
                             td
-                                button#addItemButton.btn.btn-primary(type="button") Add item
-                            td
-                                button#clearItems.btn.btn-danger(type="button") Delete all items
+                                button#deleteAllItemsButton.btn.btn-danger(type="button") Delete all items
                             td
                                 button#submitButton.btn.btn-success(type="button") Submit
 

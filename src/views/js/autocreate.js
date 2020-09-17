@@ -5,13 +5,15 @@ const activateButtons = () => {
             .addEventListener('click', () => bulkEditUrls());
     document.getElementById("saveBulkButton")
             .addEventListener('click', () => saveBulkEdit());
-    document.getElementById("clearItemUrls")
-            .addEventListener('click', () => {
-                clearItemUrlTable();
-                addUrlRow();
-            });
+    document.getElementById("deleteAllItemsButton")
+            .addEventListener('click', () => deleteAllItems());
     document.getElementById("submitButton")
             .addEventListener('click', () => submit(getTitle(), getItemUrls()));
+}
+
+const deleteAllItems = () => {
+    clearItemUrlTable();
+    addUrlRow();
 }
 
 const saveBulkEdit = () => {
@@ -46,7 +48,7 @@ const createUrlInput = (url) => {
 
 const addUrlRow = (url) => {
     const table = document.getElementById("itemUrls");
-    const row = table.insertRow();
+    const row = table.insertRow(table.rows.length - 1);
 
     const urlCell = row.insertCell(0);
     urlCell.appendChild(createUrlInput(url));
@@ -57,7 +59,11 @@ const addUrlRow = (url) => {
 
 const deleteRow = (row) => {
     const rowIndex = row.rowIndex;
-    document.getElementById("itemUrls").deleteRow(rowIndex - 1);
+    if (row.parentNode.rows.length > 2) {
+        document.getElementById("itemUrls").deleteRow(rowIndex - 1);
+    } else if (row.parentNode.rows.length == 2) {
+        deleteAllItems();
+    }
 }
 
 const submit = (title, itemUrls) => {
@@ -128,10 +134,19 @@ const setSubmitButtonLoading = (isLoading) => {
 
 const clearItemUrlTable = () => {
     const oldTbody = document.getElementById('itemUrls');
-    const newTbody = document.createElement('tbody');
+    const newTbody = createItemTbody();
     oldTbody.parentNode.replaceChild(newTbody, oldTbody);
-    newTbody.id = "itemUrls";
 }
+
+const createItemTbody = () => {
+    const tbody = document.createElement('tbody');
+    tbody.id = "itemUrls";
+
+    const addItemButton = document.getElementById('addItemButton');
+    tbody.insertRow().insertCell().appendChild(addItemButton);
+
+    return tbody;
+};
 
 const getTitle = () => {
     return document.getElementById('gameTitle').value;

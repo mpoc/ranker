@@ -21,16 +21,19 @@ html(lang='en')
                             th URL
                             th
                     tbody#itemUrls
+                        tr
+                            td
+                                button#addItemButton.btn.btn-primary(type="button")
+                                    include includes/bootstrap-plus-icon.pug
+                                    |  Add item
                 table.table.table-responsive.table-borderless
                     tbody
                         tr
                             td
-                                button#addItemButton.btn.btn-primary(type="button") Add item
-                            td
                                 button#bulkEditButton.btn.btn-primary(type="button" data-toggle="modal" data-target="#bulkEditModal") Bulk edit items
                                 include includes/bootstrap-bulk-edit-modal.pug
                             td
-                                button#clearItemUrls.btn.btn-danger(type="button") Delete all items
+                                button#deleteAllItemsButton.btn.btn-danger(type="button") Delete all items
                             td
                                 button#submitButton.btn.btn-success(type="button") Submit
                             td

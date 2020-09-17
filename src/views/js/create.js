@@ -1,10 +1,16 @@
 const activateButtons = () => {
     document.getElementById("addItemButton")
             .addEventListener('click', () => addItemRow());
-    document.getElementById("clearItems")
-            .addEventListener('click', () => clearItemTable());
+    document.getElementById("deleteAllItemsButton")
+            .addEventListener('click', () => deleteAllItems());
     document.getElementById("submitButton")
             .addEventListener('click', () => submit(getGameTitle(), getItems()));
+}
+
+const deleteAllItems = () => {
+    clearItemTable();
+    addItemRow();
+    clearUrlParams();
 }
 
 const getGameTitle = () => {
@@ -47,7 +53,7 @@ const setSubmitButtonLoading = (isLoading) => {
 
 const disableButtons = () => {
     document.getElementById("addItemButton").disabled = true;
-    document.getElementById("clearItems").disabled = true;
+    document.getElementById("deleteAllItemsButton").disabled = true;
     document.getElementById("submitButton").disabled = true;
 }
 
@@ -190,7 +196,7 @@ const createItemRemoveButton = () => {
 
 const addItemRow = (title, url, imageUrl) => {
     const table = document.getElementById("items");
-    const row = table.insertRow();
+    const row = table.insertRow(table.rows.length - 1);
     row.classList.add("item");
     
     const titleCell = row.insertCell(0);
@@ -208,7 +214,12 @@ const addItemRow = (title, url, imageUrl) => {
 
 const deleteRow = (row) => {
     const rowIndex = row.rowIndex;
-    document.getElementById("items").deleteRow(rowIndex - 1);
+    if (row.parentNode.rows.length > 2) {
+        document.getElementById("items").deleteRow(rowIndex - 1);
+    } else if (row.parentNode.rows.length == 2) {
+        clearItemTable();
+        addItemRow();
+    }
 }
 
 const updateImagePreview = (imageUrlInput) => {
@@ -226,12 +237,19 @@ const clearUrlParams = () => {
 
 const clearItemTable = () => {
     const oldTbody = document.getElementById('items');
-    const newTbody = document.createElement('tbody');
+    const newTbody = createItemsTbody();
     oldTbody.parentNode.replaceChild(newTbody, oldTbody);
-    newTbody.id = "items";
-    clearUrlParams();
-    addItemRow();
 }
+
+const createItemsTbody = () => {
+    const tbody = document.createElement('tbody');
+    tbody.id = "items";
+
+    const addItemButton = document.getElementById('addItemButton');
+    tbody.insertRow().insertCell().appendChild(addItemButton);
+
+    return tbody;
+};
 
 window.onload = () => {
     activateButtons();
