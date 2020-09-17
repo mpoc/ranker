@@ -12,8 +12,6 @@ const activateButtons = () => {
             });
     document.getElementById("submitButton")
             .addEventListener('click', () => submit(getTitle(), getItemUrls()));
-    document.getElementById('manualGame')
-            .addEventListener('click', () => window.location.href = window.location.origin + "/create");
 }
 
 const saveBulkEdit = () => {
