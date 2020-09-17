@@ -85,6 +85,7 @@ const fetchImagesForMatch = () => {
         .then(data => {
             setImagesLoading(false);
             if (data.success) {
+                setTitle(data.data.title);
                 setImages(data.data.items);
                 setAccuracy(data.data.accuracy);
             }
@@ -133,6 +134,10 @@ const setImages = (items) => {
     // document.getElementById('firstDeviation').innerHTML = "Rating deviation: " + items[0].rating.ratingDeviation;
     // document.getElementById('secondDeviation').innerHTML = "Rating deviation: " + items[1].rating.ratingDeviation;
 }
+
+const setTitle = (title) => {
+    document.title = title + " - Vote - Ranker"
+};
 
 document.addEventListener('keydown', (e) => {
     if (e.code == "ArrowLeft") {

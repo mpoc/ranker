@@ -339,6 +339,7 @@ export const getNewMatch = async (req, res, next) => {
             success: true,
             message: "Items found",
             data: {
+                title: game.title,
                 accuracy,
                 items: itemsForGame
             }

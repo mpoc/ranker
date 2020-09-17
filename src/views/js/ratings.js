@@ -12,6 +12,7 @@ const fetchGame = () => {
         .then(data => {
             if (data.success) {
                 populateTable(data.data.items);
+                setTitle(data.data.title);
             }
         })
         .catch(err => console.error(err));
@@ -55,6 +56,10 @@ const populateTable = (items) => {
         imageCell.appendChild(createItemImage(item.imageUrl, item.url));
     });
 }
+
+const setTitle = (title) => {
+    document.title = title + " - Ratings - Ranker";
+};
 
 window.onload = () => {
     fetchGame();
