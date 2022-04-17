@@ -23,4 +23,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: mpoc/ranker:latest
+          tags: |
+            mpoc/ranker:${{ github.sha }}
+            mpoc/ranker:latest
