@@ -5,8 +5,8 @@
     "repository": "git@github.com:mpoc/ranker.git",
     "license": "MIT",
     "scripts": {
-        "build": "tsc && yarn post-build",
-        "post-build": "cp -r src/views dist",
+        "build": "tsc",
+        "postbuild": "cp -r src/views dist",
         "start": "node dist/index.js",
         "prod": "yarn build && yarn start",
         "dev": "nodemon --watch 'src/**/*.ts' --exec ts-node src/index.ts",
