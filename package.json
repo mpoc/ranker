@@ -36,7 +36,7 @@
         "metascraper-image": "^5.11.21",
         "metascraper-title": "^5.11.21",
         "metascraper-url": "^5.11.21",
-        "mongoose": "^5.9.18",
+        "mongoose": "^5.13.15",
         "morgan": "^1.10.0",
         "pug": "^3.0.0",
         "winston": "^3.2.1"
